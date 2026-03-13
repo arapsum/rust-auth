@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use tera::{Context, Tera};
 
 mod error;
 mod log;
@@ -21,16 +22,13 @@ impl Config {
 
         let filename = config_dir.join(format!("{}.yaml", env.as_str()));
 
-        let settings = config::Config::builder()
-            .add_source(config::File::from(filename))
-            .add_source(
-                config::Environment::with_prefix("APP")
-                    .separator("__")
-                    .prefix_separator("_"),
-            )
-            .build()?;
+        let contents = std::fs::read_to_string(&filename)?;
 
-        settings.try_deserialize::<Self>().map_err(Into::into)
+        let rendered = render_string(&contents, &serde_json::json!({}))?;
+
+        let config: Self = serde_saphyr::from_str(&rendered)?;
+
+        Ok(config)
     }
 
     #[must_use]
@@ -93,4 +91,10 @@ impl From<&str> for Environment {
             _ => Self::Other(value.to_string()),
         }
     }
+}
+
+pub fn render_string(templ: &str, locals: &serde_json::Value) -> ConfigResult<String> {
+    let text = Tera::one_off(templ, &Context::from_serialize(locals)?, false)?;
+
+    Ok(text)
 }

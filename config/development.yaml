@@ -1,7 +1,17 @@
 server:
   protocol: http
-  host: 127.0.0.1
-  port: 7150
+  host: {{ get_env(name = "SERVER_HOST", default = "127.0.0.1") }}
+  port: {{ get_env(name = "SERVER_PORT", default = "7150") }}
+
+database:
+  uri: {{ get_env(name = "DATABASE_URL", default = "postgresql://username:password@localhost:5432/database") }}
+  max_connections: {{ get_env(name = "DATABASE_MAX_CONNECTIONS", default = "10") }}
+  min_connections: {{ get_env(name = "DATABASE_MIN_CONNECTIONS", default = "0") }}
+  connection_timeout: {{ get_env(name = "DATABASE_CONNECTION_TIMEOUT", default = "5") }}
+  idle_timeout: {{ get_env(name = "DATABASE_IDLE_TIMEOUT", default = "5") }}
+  auto_migrate: {{ get_env(name = "DATABASE_AUTO_MIGRATE", default = "true") }}
+  dangerously_truncate: {{ get_env(name = "DATABASE_DANGEROUSLY_TRUNCATE", default = "false") }}
+  dangerously_recreate: {{ get_env(name = "DATABASE_DANGEROUSLY_RECREATE", default = "false") }}
 
 logger:
   level: debug

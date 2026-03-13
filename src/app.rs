@@ -4,6 +4,7 @@ use std::net::SocketAddr;
 use axum::Router;
 use clap::Parser;
 use color_eyre::config::{HookBuilder, Theme};
+use dotenvy::dotenv;
 use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
 
@@ -28,6 +29,8 @@ impl App {
         Self::parse()
     }
     pub async fn run(&self) -> Result<()> {
+        dotenv().ok();
+
         HookBuilder::new().theme(if std::io::stderr().is_terminal() {
             Theme::dark()
         } else {

@@ -1,5 +1,7 @@
 use std::fmt::{self, Display};
 
+pub mod response;
+
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error(transparent)]
