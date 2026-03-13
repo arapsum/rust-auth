@@ -10,10 +10,14 @@ pub enum ConfigError {
     FromEnv(#[from] tracing_subscriber::filter::FromEnvError),
     #[error(transparent)]
     IO(#[from] std::io::Error),
+    #[error(transparent)]
+    Migrate(#[from] sqlx::migrate::MigrateError),
     #[error("Non-blocking work guard already set")]
     NonBlockingWorkGuardAlreadySet,
     #[error(transparent)]
     SerdeSaphyr(#[from] serde_saphyr::Error),
+    #[error(transparent)]
+    Sqlx(#[from] sqlx::Error),
     #[error(transparent)]
     TeraError(#[from] tera::Error),
     #[error(transparent)]

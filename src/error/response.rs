@@ -9,7 +9,7 @@ use super::{Error, Report};
 impl IntoResponse for Report {
     fn into_response(self) -> Response {
         let err = self.0;
-        let err_string = format!("{}", err);
+        let err_string = format!("{err}",);
 
         tracing::error!("Error: {}", err_string);
 

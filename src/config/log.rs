@@ -149,12 +149,14 @@ impl Logger {
     }
 
     fn writer(&self) -> BoxMakeWriter {
-        match self.file_appender() {
-            Some(file_appender) => file_appender
-                .writer()
-                .unwrap_or_else(|_| BoxMakeWriter::new(std::io::stderr)),
-            None => BoxMakeWriter::new(std::io::stderr),
-        }
+        self.file_appender().map_or_else(
+            || BoxMakeWriter::new(std::io::stderr),
+            |file_appender| {
+                file_appender
+                    .writer()
+                    .unwrap_or_else(|_| BoxMakeWriter::new(std::io::stderr))
+            },
+        )
     }
 
     fn base_fmt_layer<S>(&self) -> TracingFmtLayer<S>
@@ -236,10 +238,10 @@ pub enum Rotation {
 impl Display for Rotation {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            Rotation::Minutely => write!(f, "minutely"),
-            Rotation::Hourly => write!(f, "hourly"),
-            Rotation::Daily => write!(f, "daily"),
-            Rotation::Weekly => write!(f, "weekly"),
+            Self::Minutely => write!(f, "minutely"),
+            Self::Hourly => write!(f, "hourly"),
+            Self::Daily => write!(f, "daily"),
+            Self::Weekly => write!(f, "weekly"),
         }
     }
 }
@@ -305,12 +307,12 @@ impl LoggerFileAppender {
                     .set(work_guard)
                     .map_err(|_e| ConfigError::NonBlockingWorkGuardAlreadySet)?;
 
-                return Ok(BoxMakeWriter::new(non_blocking));
+                Ok(BoxMakeWriter::new(non_blocking))
             } else {
-                return Ok(BoxMakeWriter::new(rolling_file_appender));
+                Ok(BoxMakeWriter::new(rolling_file_appender))
             }
         } else {
-            return Ok(BoxMakeWriter::new(std::io::stderr));
+            Ok(BoxMakeWriter::new(std::io::stderr))
         }
     }
 }

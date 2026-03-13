@@ -1,3 +1,4 @@
+#![allow(clippy::missing_errors_doc)]
 use std::io::IsTerminal;
 use std::net::SocketAddr;
 
@@ -19,7 +20,7 @@ use crate::{
 #[command(version, about, long_about=None)]
 pub struct App {
     /// The environment to run the app in
-    #[arg(short, long)]
+    #[arg(short, long, default_value_t = Environment::default())]
     env: Environment,
 }
 
@@ -40,6 +41,8 @@ impl App {
         let config = Config::from_env(&self.env)?;
 
         config.logger().setup()?;
+
+        config.database().init().await?;
 
         let listener = TcpListener::bind(config.server().address()).await?;
         let app = Router::new()
