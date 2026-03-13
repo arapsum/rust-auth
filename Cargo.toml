@@ -1,0 +1,29 @@
+[package]
+name = "auth"
+version = "0.1.0"
+edition = "2024"
+authors = ["Kibet arap Sum <kibetarapsum@gmail.com>"]
+
+[[bin]]
+name = "auth"
+path = "src/bin/main.rs"
+
+[lib]
+name = "auth"
+path = "src/lib.rs"
+
+[dependencies]
+axum = { version = "0.8.8", features = ["macros"] }
+clap = { version = "4.5.60", features = ["derive"] }
+color-eyre = "0.6.5"
+config = { version = "0.15.19", features = ["yaml"] }
+serde = { version = "1.0.228", features = ["derive"] }
+serde_json = "1.0.149"
+thiserror = "2.0.18"
+tokio = { version = "1.50.0", features = ["full"] }
+tower = { version = "0.5.3", features = ["tracing", "tokio"] }
+tower-http = { version = "0.6.8", features = ["trace", "cors"] }
+tracing = { version = "0.1.44", features = ["log"] }
+tracing-appender = "0.2.4"
+tracing-error = "0.2.1"
+tracing-subscriber = { version = "0.3.22", features = ["env-filter", "json", "serde", "tracing"] }

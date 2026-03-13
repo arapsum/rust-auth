@@ -1,0 +1,22 @@
+server:
+  protocol: http
+  host: 127.0.0.1
+  port: 7151
+
+logger:
+  level: trace
+  format: full
+  crates:
+    - auth
+    - axum
+    - sqlx
+    - tower
+    - tower_http
+  # file_appender:
+  # enable: true
+  # non_blocking: true
+  # rotation: daily # options: hourly, daily, weekly, monthly
+  # directory: logs # default ./logs
+  # filename_prefix: auth
+  # filename_suffix: .log
+  # max_log_files: 30
