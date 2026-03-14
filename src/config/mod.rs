@@ -1,10 +1,11 @@
 #![allow(clippy::missing_errors_doc)]
 use std::{
     fmt::{self, Display},
-    path::Path,
+    path::{Path, PathBuf},
     time::Duration,
 };
 
+use jsonwebtoken::{DecodingKey, EncodingKey};
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres, migrate::Migrator, postgres::PgPoolOptions};
 use tera::{Context, Tera};
@@ -17,11 +18,12 @@ pub use self::{
     log::{Format, Level, Logger},
 };
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Clone)]
 pub struct Config {
     server: ServerConfig,
     logger: Logger,
     database: DatabaseConfig,
+    auth: AuthConfig,
 }
 
 impl Config {
@@ -54,9 +56,14 @@ impl Config {
     pub const fn database(&self) -> &DatabaseConfig {
         &self.database
     }
+
+    #[must_use]
+    pub const fn auth(&self) -> &AuthConfig {
+        &self.auth
+    }
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct ServerConfig {
     pub(crate) protocol: String,
     pub(crate) host: String,
@@ -75,7 +82,13 @@ impl ServerConfig {
     }
 }
 
-#[derive(Debug, Deserialize)]
+impl Display for ServerConfig {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{}", self.url())
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct DatabaseConfig {
     pub(crate) uri: String,
     pub(crate) max_connections: u32,
@@ -168,6 +181,50 @@ impl DatabaseConfig {
     #[must_use]
     pub const fn dangerously_recreate(&self) -> bool {
         self.dangerously_recreate
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct JwtConfig {
+    pub(crate) private_key: PathBuf,
+    pub(crate) public_key: PathBuf,
+    pub(crate) maxage: i64,
+}
+
+impl JwtConfig {
+    pub fn encoding_key(&self) -> ConfigResult<EncodingKey> {
+        let contents = std::fs::read(&self.private_key)?;
+
+        EncodingKey::from_rsa_pem(&contents).map_err(Into::into)
+    }
+
+    pub fn decoding_key(&self) -> ConfigResult<DecodingKey> {
+        let contents = std::fs::read(&self.public_key)?;
+
+        DecodingKey::from_rsa_pem(&contents).map_err(Into::into)
+    }
+
+    #[must_use]
+    pub const fn maxage(&self) -> i64 {
+        self.maxage
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct AuthConfig {
+    pub(crate) access: JwtConfig,
+    pub(crate) refresh: JwtConfig,
+}
+
+impl AuthConfig {
+    #[must_use]
+    pub const fn access(&self) -> &JwtConfig {
+        &self.access
+    }
+
+    #[must_use]
+    pub const fn refresh(&self) -> &JwtConfig {
+        &self.refresh
     }
 }
 

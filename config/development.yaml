@@ -22,3 +22,13 @@ logger:
     - sqlx
     - tower
     - tower_http
+
+auth:
+  access:
+    private_key: secrets/keys/dev/access_key.pem
+    public_key: secrets/keys/dev/access_key_pub.pem
+    maxage: 900 # 15 Minutes
+  refresh:
+    private_key: secrets/keys/dev/refresh_key.pem
+    public_key: secrets/keys/dev/refresh_key_pub.pem
+    maxage: 604800 # 7 Days

@@ -1,6 +1,6 @@
 #![allow(clippy::missing_errors_doc)]
-use std::io::IsTerminal;
 use std::net::SocketAddr;
+use std::{io::IsTerminal, sync::Arc};
 
 use axum::Router;
 use clap::Parser;
@@ -10,8 +10,9 @@ use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
 
 use crate::{
-    Result,
+    AppContext, Result,
     config::{Config, Environment},
+    controllers,
     middlewares::trace,
 };
 
@@ -45,13 +46,14 @@ impl App {
         config.database().init().await?;
 
         let listener = TcpListener::bind(config.server().address()).await?;
+
+        tracing::info!("Server running at {}", config.server().url());
+
+        let ctx = Arc::new(AppContext::try_from(config)?);
+
         let app = Router::new()
-            .route(
-                "/",
-                axum::routing::get(|| async {
-                    axum::Json(serde_json::json!({"message": "Server is up and running!"}))
-                }),
-            )
+            .nest("/api", controllers::router(&ctx))
+            .fallback(controllers::fallback)
             .layer(
                 TraceLayer::new_for_http()
                     .make_span_with(trace::make_span_with)
@@ -59,8 +61,6 @@ impl App {
                     .on_response(trace::on_response)
                     .on_failure(trace::on_failure),
             );
-
-        tracing::info!("Server running at {}", config.server().url());
 
         axum::serve(
             listener,

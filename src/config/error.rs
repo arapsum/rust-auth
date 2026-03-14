@@ -11,6 +11,8 @@ pub enum ConfigError {
     #[error(transparent)]
     IO(#[from] std::io::Error),
     #[error(transparent)]
+    JsonWebToken(#[from] jsonwebtoken::errors::Error),
+    #[error(transparent)]
     Migrate(#[from] sqlx::migrate::MigrateError),
     #[error("Non-blocking work guard already set")]
     NonBlockingWorkGuardAlreadySet,
