@@ -34,6 +34,7 @@ impl Error {
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "An internal server error occurred.".to_string(),
             ),
+            Self::Model(err) => err.response_body(),
             Self::Validation(err) => (StatusCode::UNPROCESSABLE_ENTITY, err.to_string()),
         };
 

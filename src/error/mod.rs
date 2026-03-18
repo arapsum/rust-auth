@@ -1,6 +1,6 @@
 use std::fmt::{self, Display};
 
-use crate::validator::ValidationError;
+use crate::{repository::ModelError, validator::ValidationError};
 
 pub mod response;
 
@@ -10,6 +10,8 @@ pub enum Error {
     Config(#[from] crate::config::ConfigError),
     #[error(transparent)]
     IO(#[from] tokio::io::Error),
+    #[error(transparent)]
+    Model(#[from] ModelError),
     #[error(transparent)]
     Validation(#[from] ValidationError),
 }
