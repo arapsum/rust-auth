@@ -4,6 +4,8 @@ pub mod context;
 pub mod controllers;
 pub mod error;
 pub mod middlewares;
+pub mod repository;
+pub mod validator;
 
 pub use self::{
     app::App,

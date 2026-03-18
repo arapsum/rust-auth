@@ -1,5 +1,7 @@
 use std::fmt::{self, Display};
 
+use crate::validator::ValidationError;
+
 pub mod response;
 
 #[derive(Debug, thiserror::Error)]
@@ -8,6 +10,8 @@ pub enum Error {
     Config(#[from] crate::config::ConfigError),
     #[error(transparent)]
     IO(#[from] tokio::io::Error),
+    #[error(transparent)]
+    Validation(#[from] ValidationError),
 }
 
 #[derive(Debug)]

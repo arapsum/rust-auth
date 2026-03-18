@@ -32,8 +32,9 @@ impl Error {
         let (status, message) = match self {
             Self::Config(_) | Self::IO(_) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                "An internal server error occurred.",
+                "An internal server error occurred.".to_string(),
             ),
+            Self::Validation(err) => (StatusCode::UNPROCESSABLE_ENTITY, err.to_string()),
         };
 
         let body = Json(serde_json::json!({
