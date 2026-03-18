@@ -1,3 +1,4 @@
+#![allow(clippy::missing_errors_doc)]
 use argon2::{
     Argon2, PasswordHash, PasswordVerifier,
     password_hash::{PasswordHasher, SaltString, rand_core::OsRng},

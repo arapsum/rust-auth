@@ -15,10 +15,17 @@ impl<T> Validator<T>
 where
     T: Validate,
 {
-    pub fn new(t: T) -> Self {
+    pub const fn new(t: T) -> Self {
         Self(t)
     }
 
+    /// Returns the validate of this [`Validator<T>`].
+    ///
+    /// # Errors
+    ///
+    /// This function will return an error if .
+    ///  Specified validation constraint failed
+    ///  Regex does not get instantiated
     pub fn validate(&self) -> ValidationResult<&T> {
         match self.0.validate() {
             Ok(()) => Ok(&self.0),

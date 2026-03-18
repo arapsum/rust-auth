@@ -20,7 +20,7 @@ pub struct RegisterUser<'a> {
     confirm_password: Cow<'a, str>,
 }
 
-impl<'a> RegisterUser<'a> {
+impl RegisterUser<'_> {
     #[must_use]
     pub fn username(&self) -> &str {
         &self.username
@@ -51,11 +51,13 @@ pub struct LoginUser<'a> {
     password: Cow<'a, str>,
 }
 
-impl<'a> LoginUser<'a> {
+impl LoginUser<'_> {
+    #[must_use]
     pub fn email(&self) -> &str {
         &self.email
     }
 
+    #[must_use]
     pub fn password(&self) -> &str {
         &self.password
     }
