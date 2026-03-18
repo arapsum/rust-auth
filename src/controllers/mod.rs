@@ -8,6 +8,9 @@ use axum::{
 use crate::AppContext;
 
 pub mod auth;
+pub mod error;
+
+pub use self::error::{ControllerError, ControllerResult};
 
 pub fn router(ctx: &Arc<AppContext>) -> Router {
     Router::new()

@@ -10,13 +10,13 @@ pub static RE_USERNAME: LazyLock<Regex> =
 #[derive(Debug, Deserialize, Clone, Serialize, Validate)]
 #[serde(rename_all = "camelCase")]
 pub struct RegisterUser<'a> {
-    #[validate(email)]
+    #[validate(email(message = "Invalid email address"))]
     email: Cow<'a, str>,
     #[validate(custom(function = "validate_username"))]
     username: Cow<'a, str>,
     #[validate(custom(function = "validate_password"))]
     password: Cow<'a, str>,
-    #[validate(must_match(other = "password"))]
+    #[validate(must_match(other = "password", message = "Passwords do not match"))]
     confirm_password: Cow<'a, str>,
 }
 

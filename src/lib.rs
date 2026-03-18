@@ -6,6 +6,7 @@ pub mod error;
 pub mod middlewares;
 pub mod repository;
 pub mod validator;
+pub mod views;
 
 pub use self::{
     app::App,

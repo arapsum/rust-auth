@@ -7,9 +7,15 @@ pub mod response;
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error(transparent)]
+    Axum(#[from] axum::Error),
+    #[error(transparent)]
     Config(#[from] crate::config::ConfigError),
     #[error(transparent)]
+    Controller(#[from] crate::controllers::ControllerError),
+    #[error(transparent)]
     IO(#[from] tokio::io::Error),
+    #[error(transparent)]
+    JwtError(#[from] jsonwebtoken::errors::Error),
     #[error(transparent)]
     Model(#[from] ModelError),
     #[error(transparent)]

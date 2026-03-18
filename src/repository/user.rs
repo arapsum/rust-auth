@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 use sqlx::{Encode, Executor, Postgres, prelude::FromRow};
 use uuid::Uuid;
 
-use crate::validator::auth::{LoginUser, RegisterUser};
+use crate::validator::{LoginUser, RegisterUser};
 
 use super::{ModelError, ModelResult};
 
@@ -32,7 +32,7 @@ impl UserModel {
     {
         let password_hash: String = Self::hash_password(params.password().trim())?;
 
-        let new_user: Self = sqlx::query_as::<_, Self>(
+        match sqlx::query_as::<_, Self>(
             r"
             INSERT INTO users (email, password_hash, username)
             VALUES ($1, $2, $3)
@@ -43,9 +43,18 @@ impl UserModel {
         .bind(password_hash)
         .bind(params.username().trim())
         .fetch_one(db)
-        .await?;
-
-        Ok(new_user)
+        .await
+        {
+            Ok(new_user) => Ok(new_user),
+            Err(sqlx::Error::Database(err)) => {
+                if err.is_unique_violation() {
+                    Err(ModelError::EmailTaken)
+                } else {
+                    Err(ModelError::SqlxError(sqlx::Error::Database(err)))
+                }
+            }
+            Err(e) => Err(ModelError::SqlxError(e)),
+        }
     }
 
     pub async fn sign_in_user<'e, C>(db: &C, params: &LoginUser<'_>) -> ModelResult<Self>

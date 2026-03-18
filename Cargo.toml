@@ -14,7 +14,8 @@ path = "src/lib.rs"
 
 [dependencies]
 argon2 = "0.5.3"
-axum = { version = "0.8.8", features = ["macros"] }
+axum = { version = "0.8.8", features = ["json", "macros"] }
+axum-extra = { version = "0.12.5", features = ["cookie", "typed-header", "typed-routing"] }
 chrono = { version = "0.4.44", features = ["serde"] }
 clap = { version = "4.5.60", features = ["derive"] }
 color-eyre = "0.6.5"
@@ -27,6 +28,7 @@ serde_json = "1.0.149"
 sqlx = { version = "0.8.6", features = ["chrono", "postgres", "runtime-tokio", "tls-native-tls", "uuid"] }
 tera = { version = "1.20.1", default-features = false }
 thiserror = "2.0.18"
+time = { version = "0.3.47", features = ["local-offset"] }
 tokio = { version = "1.50.0", features = ["full"] }
 tower = { version = "0.5.3", features = ["tracing", "tokio"] }
 tower-http = { version = "0.6.8", features = ["trace", "cors"] }

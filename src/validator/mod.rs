@@ -2,7 +2,10 @@ use std::{borrow::Cow, collections::BTreeMap};
 
 use validator::Validate;
 
-pub use self::error::{ValidationError, ValidationResult};
+pub use self::{
+    auth::{LoginUser, RegisterUser},
+    error::{ValidationError, ValidationResult},
+};
 
 pub mod auth;
 pub mod error;

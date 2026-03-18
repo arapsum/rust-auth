@@ -1,5 +1,9 @@
 use argon2::password_hash::Error as ArgonError;
-use axum::http::StatusCode;
+use axum::{
+    Json,
+    http::StatusCode,
+    response::{IntoResponse, Response},
+};
 
 #[derive(Debug, thiserror::Error)]
 pub enum ModelError {
@@ -29,6 +33,7 @@ impl From<ArgonError> for ModelError {
 }
 
 impl ModelError {
+    #[must_use]
     pub fn response_body(&self) -> (StatusCode, String) {
         match self {
             Self::EmailTaken => (
@@ -55,5 +60,14 @@ impl ModelError {
                 )
             }
         }
+    }
+
+    #[must_use]
+    pub fn response(&self) -> Response {
+        let (status, message) = self.response_body();
+
+        let body = Json(serde_json::json!({ "error": message }));
+
+        (status, body).into_response()
     }
 }

@@ -1,4 +1,7 @@
 pub mod error;
 pub mod user;
 
-pub use self::error::{ModelError, ModelResult};
+pub use self::{
+    error::{ModelError, ModelResult},
+    user::UserModel,
+};
