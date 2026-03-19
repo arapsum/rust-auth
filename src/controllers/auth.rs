@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use axum::{
-    Json, Router,
+    Extension, Json, Router,
     body::Body,
     debug_handler,
     extract::State,
@@ -10,13 +10,14 @@ use axum::{
         header::{AUTHORIZATION, SET_COOKIE},
     },
     response::{IntoResponse, Response},
-    routing::post,
+    routing::{get, post},
 };
 use axum_extra::extract::cookie;
 
 use crate::{
     AppContext, Result,
-    middlewares::AppJson,
+    context::Claims,
+    middlewares::{AppJson, AuthLayer},
     repository::UserModel,
     validator::{LoginUser, RegisterUser, Validator},
     views::{LoginResponse, UserResponse},
@@ -84,9 +85,21 @@ async fn login(
     Ok(response)
 }
 
+#[debug_handler]
+#[tracing::instrument(skip(ctx))]
+async fn current(
+    State(ctx): State<Arc<AppContext>>,
+    Extension(claims): Extension<Claims>,
+) -> Result<Response> {
+    let user = UserModel::find_user_by_claims_key(ctx.db(), claims.id()).await?;
+
+    Ok((StatusCode::OK, Json(UserResponse::new(&user))).into_response())
+}
+
 pub fn router(ctx: &Arc<AppContext>) -> Router {
     Router::new()
         .route("/sign-up", post(register))
         .route("/sign-in", post(login))
+        .route("/me", get(current).layer(AuthLayer::new(ctx.clone())))
         .with_state(ctx.clone())
 }

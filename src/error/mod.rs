@@ -1,5 +1,7 @@
 use std::fmt::{self, Display};
 
+use jsonwebtoken::errors::{Error as JwtError, ErrorKind as JwtErrorKind};
+
 use crate::{repository::ModelError, validator::ValidationError};
 
 pub mod response;
@@ -12,12 +14,18 @@ pub enum Error {
     Config(#[from] crate::config::ConfigError),
     #[error(transparent)]
     Controller(#[from] crate::controllers::ControllerError),
+    #[error("Invalid authorisation token")]
+    InvalidToken,
     #[error(transparent)]
     IO(#[from] tokio::io::Error),
     #[error(transparent)]
-    JwtError(#[from] jsonwebtoken::errors::Error),
+    JwtError(JwtError),
+    #[error("Missing credentials")]
+    MissingCredentials,
     #[error(transparent)]
     Model(#[from] ModelError),
+    #[error("Session expired")]
+    SessionExpired,
     #[error(transparent)]
     Validation(#[from] ValidationError),
 }
@@ -41,3 +49,13 @@ impl Display for Report {
 }
 
 pub type Result<T, E = Report> = std::result::Result<T, E>;
+
+impl From<JwtError> for Error {
+    fn from(err: JwtError) -> Self {
+        match err.kind() {
+            JwtErrorKind::ExpiredSignature => Self::SessionExpired,
+            JwtErrorKind::InvalidToken => Self::InvalidToken,
+            _ => Self::JwtError(err),
+        }
+    }
+}

@@ -1,6 +1,6 @@
 #![allow(clippy::missing_errors_doc)]
 use chrono::{DateTime, Utc};
-use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header};
+use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -63,12 +63,20 @@ impl AuthContext {
         &self.access
     }
 
-    pub fn generate_access_token(&self, sub: &str) -> crate::Result<String> {
+    pub fn generate_access_token(&self, sub: &str) -> Result<String, crate::Error> {
         self.access.generate_token(sub)
     }
 
-    pub fn generate_refresh_token(&self, sub: &str) -> crate::Result<String> {
+    pub fn generate_refresh_token(&self, sub: &str) -> Result<String, crate::Error> {
         self.refresh.generate_token(sub)
+    }
+
+    pub fn verify_access_token(&self, token: &str) -> Result<Claims, crate::Error> {
+        self.access.verify_token(token)
+    }
+
+    pub fn verify_refresh_token(&self, token: &str) -> Result<Claims, crate::Error> {
+        self.refresh.verify_token(token)
     }
 }
 
@@ -106,9 +114,11 @@ impl JwtContext {
         self.maxage
     }
 
-    pub fn generate_token(&self, sub: &str) -> crate::Result<String> {
-        let exp = self.maxage();
+    pub fn generate_token(&self, sub: &str) -> Result<String, crate::Error> {
         let now = chrono::Utc::now();
+
+        let exp = (now + chrono::Duration::seconds(self.maxage)).timestamp();
+
         let claims = Claims::new(sub, exp, now);
 
         let header = Header::new(Algorithm::RS256);
@@ -116,6 +126,15 @@ impl JwtContext {
         let token = jsonwebtoken::encode(&header, &claims, self.encoding_key())?;
 
         Ok(token)
+    }
+
+    pub fn verify_token(&self, token: &str) -> Result<Claims, crate::Error> {
+        let token = jsonwebtoken::decode::<Claims>(
+            token,
+            self.decoding_key(),
+            &Validation::new(Algorithm::RS256),
+        )?;
+        Ok(token.claims)
     }
 }
 

@@ -87,6 +87,24 @@ impl UserModel {
         Ok(user)
     }
 
+    pub async fn find_user_by_claims_key<'e, C>(db: &C, key: &str) -> ModelResult<Self>
+    where
+        for<'a> &'a C: Executor<'e, Database = Postgres>,
+    {
+        let id = Uuid::parse_str(key).map_err(|_| ModelError::InvalidClaimsKey)?;
+        let user: Self = sqlx::query_as::<_, Self>(
+            r"
+            SELECT * FROM users WHERE id = $1
+        ",
+        )
+        .bind(id)
+        .fetch_optional(db)
+        .await?
+        .ok_or_else(|| ModelError::EntityNotFound)?;
+
+        Ok(user)
+    }
+
     pub async fn find_user_by_email<'e, C>(db: &C, email: &str) -> ModelResult<Option<Self>>
     where
         for<'a> &'a C: Executor<'e, Database = Postgres>,

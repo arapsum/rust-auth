@@ -34,9 +34,8 @@ impl IntoResponse for Report {
 }
 
 impl Error {
+    #[must_use]
     pub fn response(&self) -> Response {
-        tracing::error!("{}", self);
-
         let (status, message) = match self {
             Self::Config(_) | Self::IO(_) | Self::Axum(_) | Self::JwtError(_) => (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -45,6 +44,18 @@ impl Error {
             Self::Model(err) => err.response_body(),
             Self::Validation(err) => (StatusCode::UNPROCESSABLE_ENTITY, err.to_string()),
             Self::Controller(err) => err.response_body(),
+            Self::InvalidToken => (
+                StatusCode::UNAUTHORIZED,
+                "Invalid authorisation token".to_string(),
+            ),
+            Self::MissingCredentials => (
+                StatusCode::UNAUTHORIZED,
+                "Login credentials are required".to_string(),
+            ),
+            Self::SessionExpired => (
+                StatusCode::UNAUTHORIZED,
+                "Session expired. Please log in again.".to_string(),
+            ),
         };
 
         let body = Json(serde_json::json!({

@@ -20,6 +20,7 @@ chrono = { version = "0.4.44", features = ["serde"] }
 clap = { version = "4.5.60", features = ["derive"] }
 color-eyre = "0.6.5"
 dotenvy = "0.15.7"
+futures-util = "0.3.32"
 jsonwebtoken = { version = "10.3.0", features = ["rust_crypto", "use_pem"] }
 regex = "1.12.3"
 serde = { version = "1.0.228", features = ["derive"] }

@@ -13,6 +13,8 @@ pub enum ModelError {
     EntityAlreadyExists,
     #[error("Entity not found")]
     EntityNotFound,
+    #[error("Invalid claims key")]
+    InvalidClaimsKey,
     #[error("Invalid credentials provided")]
     InvalidCredentials,
     #[error("Password hashing error: {0}")]
@@ -52,6 +54,7 @@ impl ModelError {
             Self::InvalidCredentials => {
                 (StatusCode::UNAUTHORIZED, "Invalid email or password".into())
             }
+            Self::InvalidClaimsKey => (StatusCode::FORBIDDEN, "Invalid claims key".into()),
             Self::PasswordHash(e) => {
                 tracing::error!("Argon2 Error {}", e);
                 (
