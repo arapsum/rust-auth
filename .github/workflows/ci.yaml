@@ -93,10 +93,10 @@ jobs:
       - name: Generate JWT PEM keys
         run: |
           mkdir -p security/keys/dev
-          echo "${{ secrets.ACCESS_KEY }}" >> security/keys/dev/access_key.pem
-          echo "${{ secrets.ACCESS_KEY_PUB }}" >> security/keys/dev/access_key_pub.pem
-          echo "${{ secrets.REFRESH_KEY }}" >> security/keys/dev/refresh_key.pem
-          echo "${{ secrets.REFRESH_KEY_PUB }}" >> security/keys/dev/refresh_key_pub.pem
+          echo "${{ secrets.ACCESS_KEY }}" >> secrets/keys/dev/access_key.pem
+          echo "${{ secrets.ACCESS_KEY_PUB }}" >> secrets/keys/dev/access_key_pub.pem
+          echo "${{ secrets.REFRESH_KEY }}" >> secrets/keys/dev/refresh_key.pem
+          echo "${{ secrets.REFRESH_KEY_PUB }}" >> secrets/keys/dev/refresh_key_pub.pem
       - name: Run cargo test
         uses: actions-rs/cargo@v1
         with:
