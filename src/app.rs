@@ -18,11 +18,25 @@ use crate::{
 
 /// Auth app configuration
 #[derive(Debug, Parser)]
-#[command(version, about, long_about=None)]
+#[command(version = env!("CARGO_PKG_VERSION"), about = "Authentication service using Axum", author = env!("CARGO_PKG_AUTHORS"), long_about=None)]
 pub struct App {
-    /// The environment to run the app in
+    /// The environment to run the app in: development, production, testing, or other
     #[arg(short, long, default_value_t = Environment::default())]
     env: Environment,
+
+    #[command(subcommand)]
+    command: Option<Commands>,
+}
+
+pub struct AppResult {
+    pub listener: TcpListener,
+    pub router: Router,
+}
+
+impl AppResult {
+    pub const fn new(listener: TcpListener, router: Router) -> Self {
+        Self { listener, router }
+    }
 }
 
 impl App {
@@ -30,28 +44,27 @@ impl App {
     pub fn new() -> Self {
         Self::parse()
     }
-    pub async fn run(&self) -> Result<()> {
-        dotenv().ok();
 
-        HookBuilder::new().theme(if std::io::stderr().is_terminal() {
-            Theme::dark()
-        } else {
-            Theme::new()
-        });
+    pub fn config(&self) -> Result<Config> {
+        Config::from_env(&self.env).map_err(Into::into)
+    }
 
-        let config = Config::from_env(&self.env)?;
-
+    pub async fn init(&self, config: &Config) -> Result<Arc<AppContext>> {
         config.logger().setup()?;
-
         config.database().init().await?;
+
+        let ctx = AppContext::try_from(config)?;
+
+        Ok(Arc::new(ctx))
+    }
+
+    pub async fn create(&self) -> Result<AppResult> {
+        let config = self.config()?;
+        let ctx = self.init(&config).await?;
 
         let listener = TcpListener::bind(config.server().address()).await?;
 
-        tracing::info!("Server running at {}", config.server().url());
-
-        let ctx = Arc::new(AppContext::try_from(config)?);
-
-        let app = Router::new()
+        let router = Router::new()
             .nest("/api", controllers::router(&ctx))
             .fallback(controllers::fallback)
             .layer(
@@ -62,9 +75,29 @@ impl App {
                     .on_failure(trace::on_failure),
             );
 
+        Ok(AppResult::new(listener, router))
+    }
+
+    pub async fn run(&self) -> Result<()> {
+        dotenv().ok();
+
+        HookBuilder::new().theme(if std::io::stderr().is_terminal() {
+            Theme::dark()
+        } else {
+            Theme::new()
+        });
+
+        let this = Self::parse();
+        let config = this.config()?;
+        let app_result = this.create().await?;
+
+        tracing::info!("Server running at {}", config.server().url());
+
         axum::serve(
-            listener,
-            app.into_make_service_with_connect_info::<SocketAddr>(),
+            app_result.listener,
+            app_result
+                .router
+                .into_make_service_with_connect_info::<SocketAddr>(),
         )
         .await
         .map_err(Into::into)
@@ -75,4 +108,10 @@ impl Default for App {
     fn default() -> Self {
         Self::new()
     }
+}
+
+#[derive(Debug, Clone, clap::Subcommand)]
+enum Commands {
+    /// Seeds the database with initial data
+    Seed,
 }

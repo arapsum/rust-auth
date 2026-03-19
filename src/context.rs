@@ -46,6 +46,18 @@ impl TryFrom<Config> for AppContext {
     }
 }
 
+impl TryFrom<&Config> for AppContext {
+    type Error = Error;
+
+    fn try_from(cfg: &Config) -> Result<Self, Self::Error> {
+        Ok(Self {
+            db: cfg.database().pool()?,
+            auth: cfg.auth().try_into()?,
+            config: cfg.clone(),
+        })
+    }
+}
+
 #[derive(Clone)]
 pub struct AuthContext {
     access: JwtContext,
