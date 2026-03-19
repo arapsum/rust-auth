@@ -5,10 +5,13 @@ use argon2::{
 };
 use chrono::{DateTime, FixedOffset};
 use serde::{Deserialize, Serialize};
-use sqlx::{Encode, Executor, Postgres, prelude::FromRow};
+use sqlx::{Encode, Executor, PgPool, Postgres, prelude::FromRow};
 use uuid::Uuid;
 
-use crate::validator::{LoginUser, RegisterUser};
+use crate::{
+    seed::Seedable,
+    validator::{LoginUser, RegisterUser},
+};
 
 use super::{ModelError, ModelResult};
 
@@ -135,6 +138,38 @@ impl UserModel {
         let parded_hash = PasswordHash::new(&self.password_hash)?;
 
         Argon2::default().verify_password(plain_password.as_bytes(), &parded_hash)?;
+
+        Ok(())
+    }
+
+    pub async fn seed_data(db: &PgPool, file: &str) -> ModelResult<()> {
+        let users = Self::load(file).await?;
+
+        Self::seed(db, &users).await
+    }
+}
+
+#[async_trait::async_trait]
+impl Seedable for UserModel {
+    async fn seed(db: &PgPool, data: &[Self]) -> ModelResult<()> {
+        for user in data {
+            sqlx::query(
+                r"
+                INSERT INTO users (id, email, username, password_hash, image, verified_at, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            ",
+            )
+            .bind(user.id)
+            .bind(user.email.as_str())
+            .bind(user.username.as_str())
+            .bind(user.password_hash.as_str())
+            .bind(user.image.as_deref())
+            .bind(user.verified_at)
+            .bind(user.created_at)
+            .bind(user.updated_at)
+            .execute(db)
+            .await?;
+        }
 
         Ok(())
     }

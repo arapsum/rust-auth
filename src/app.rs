@@ -6,9 +6,11 @@ use axum::Router;
 use clap::Parser;
 use color_eyre::config::{HookBuilder, Theme};
 use dotenvy::dotenv;
+use sqlx::PgPool;
 use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
 
+use crate::repository::UserModel;
 use crate::{
     AppContext, Result,
     config::{Config, Environment},
@@ -101,6 +103,12 @@ impl App {
         )
         .await
         .map_err(Into::into)
+    }
+
+    pub async fn seed(db: &PgPool) -> Result<()> {
+        UserModel::seed_data(db, "users.json").await?;
+
+        Ok(())
     }
 }
 

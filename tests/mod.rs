@@ -6,6 +6,7 @@ use auth::{
 };
 
 mod repository;
+mod seed;
 
 pub async fn boot_test() -> Result<Arc<AppContext>> {
     let config = Config::from_env(&Environment::Testing)?;

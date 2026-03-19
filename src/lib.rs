@@ -5,6 +5,7 @@ pub mod controllers;
 pub mod error;
 pub mod middlewares;
 pub mod repository;
+pub mod seed;
 pub mod validator;
 pub mod views;
 
