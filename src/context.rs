@@ -32,6 +32,13 @@ impl AppContext {
     pub const fn auth(&self) -> &AuthContext {
         &self.auth
     }
+
+    pub async fn init(&self) -> Result<(), crate::Error> {
+        self.config().logger().setup()?;
+        self.config().database().init().await?;
+
+        Ok(())
+    }
 }
 
 impl TryFrom<Config> for AppContext {

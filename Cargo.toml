@@ -39,3 +39,8 @@ tracing-error = "0.2.1"
 tracing-subscriber = { version = "0.3.22", features = ["env-filter", "json", "serde", "tracing"] }
 uuid = { version = "1.22.0", features = ["v4", "serde"] }
 validator = { version = "0.20.0", features = ["derive"] }
+
+[dev-dependencies]
+insta = { version = "1.46.3", features = ["redactions", "filters"] }
+serial = "0.4.0"
+serial_test = "3.4.0"

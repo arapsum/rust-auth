@@ -20,7 +20,22 @@ pub struct RegisterUser<'a> {
     confirm_password: Cow<'a, str>,
 }
 
-impl RegisterUser<'_> {
+impl<'a> RegisterUser<'a> {
+    #[must_use]
+    pub const fn new(
+        email: Cow<'a, str>,
+        username: Cow<'a, str>,
+        password: Cow<'a, str>,
+        confirm_password: Cow<'a, str>,
+    ) -> Self {
+        Self {
+            email,
+            username,
+            password,
+            confirm_password,
+        }
+    }
+
     #[must_use]
     pub fn username(&self) -> &str {
         &self.username

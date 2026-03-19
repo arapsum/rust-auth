@@ -3,6 +3,16 @@ server:
   host: 127.0.0.1
   port: 7151
 
+database:
+  uri: {{ get_env(name = "TEST_DATABASE_URL", default = "postgresql://username:password@localhost:5433/test_database") }}
+  max_connections: {{ get_env(name = "DATABASE_MAX_CONNECTIONS", default = "1") }}
+  min_connections: {{ get_env(name = "DATABASE_MIN_CONNECTIONS", default = "1") }}
+  connection_timeout: {{ get_env(name = "DATABASE_CONNECTION_TIMEOUT", default = "5") }}
+  idle_timeout: {{ get_env(name = "DATABASE_IDLE_TIMEOUT", default = "5") }}
+  auto_migrate: {{ get_env(name = "DATABASE_AUTO_MIGRATE", default = "true") }}
+  dangerously_truncate: {{ get_env(name = "DATABASE_DANGEROUSLY_TRUNCATE", default = "true") }}
+  dangerously_recreate: {{ get_env(name = "DATABASE_DANGEROUSLY_RECREATE", default = "true") }}
+
 logger:
   level: trace
   format: full
@@ -12,21 +22,21 @@ logger:
     - sqlx
     - tower
     - tower_http
-  # file_appender:
-  # enable: true
-  # non_blocking: true
-  # rotation: daily # options: hourly, daily, weekly, monthly
-  # directory: logs # default ./logs
-  # filename_prefix: auth
-  # filename_suffix: .log
-  # max_log_files: 30
+  file_appender:
+    enable: true
+    non_blocking: true
+    rotation: daily # options: hourly, daily, weekly, monthly
+    directory: logs # default ./logs
+    filename_prefix: auth_test
+    filename_suffix: .log
+    max_log_files: 30
 
 auth:
   access:
     private_key: secrets/keys/dev/access_key.pem
     public_key: secrets/keys/dev/access_key_pub.pem
-    exp: 900 # 15 Minutes
+    maxage: 900 # 15 Minutes
   refresh:
     private_key: secrets/keys/dev/refresh_key.pem
     public_key: secrets/keys/dev/refresh_key_pub.pem
-    exp: 604800 # 7 Days
+    maxage: 604800 # 7 Days

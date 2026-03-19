@@ -109,11 +109,19 @@ impl Logger {
             .with(env_filter_layer)
             .with(ErrorLayer::default());
 
-        match self.format {
-            Format::Compact => registry.with(self.compact_fmt_layer()).try_init()?,
-            Format::Full => registry.with(self.base_fmt_layer()).try_init()?,
-            Format::Json => registry.with(self.json_fmt_layer()).try_init()?,
-            Format::Pretty => registry.with(self.pretty_fmt_layer()).try_init()?,
+        let result = match self.format {
+            Format::Compact => registry.with(self.compact_fmt_layer()).try_init(),
+            Format::Full => registry.with(self.base_fmt_layer()).try_init(),
+            Format::Json => registry.with(self.json_fmt_layer()).try_init(),
+            Format::Pretty => registry.with(self.pretty_fmt_layer()).try_init(),
+        };
+
+        if let Err(e) = result {
+            let msg = e.to_string();
+
+            if !msg.contains("a global default trace dispatcher has already been set") {
+                return Err(e.into());
+            }
         }
 
         Ok(())

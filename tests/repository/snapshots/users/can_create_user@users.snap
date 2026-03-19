@@ -1,0 +1,17 @@
+---
+source: tests/repository/users.rs
+assertion_line: 44
+expression: result
+---
+Ok(
+    UserModel {
+        id: ID,
+        email: "test@example.com",
+        username: "testuser",
+        password_hash: "PASSWORD",
+        image: None,
+        verified_at: None,
+        created_at: DATE,
+        updated_at: DATE,
+    },
+)
