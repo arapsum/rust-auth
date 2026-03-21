@@ -1,0 +1,9 @@
+---
+source: tests/requests/auth.rs
+assertion_line: 55
+expression: "(response.status_code(), response.text())"
+---
+(
+    201,
+    "{\"id\":\"ID\",\"email\":\"test1@example.com\",\"username\":\"test_user1\",\"imageUrl\":null,\"verified\":false,\"createdAt\":\"DATEZ\",\"updatedAt\":\"DATEZ\"}",
+)

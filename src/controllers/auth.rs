@@ -33,7 +33,7 @@ async fn register(
 
     let user = UserModel::register_user(ctx.db(), validated).await?;
 
-    Ok((StatusCode::OK, Json(UserResponse::new(&user))).into_response())
+    Ok((StatusCode::CREATED, Json(UserResponse::new(&user))).into_response())
 }
 
 #[debug_handler]

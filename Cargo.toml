@@ -17,6 +17,7 @@ argon2 = "0.5.3"
 async-trait = "0.1.89"
 axum = { version = "0.8.8", features = ["json", "macros"] }
 axum-extra = { version = "0.12.5", features = ["cookie", "typed-header", "typed-routing"] }
+axum-test = { version = "19.1.1", features = ["typed-routing"] }
 chrono = { version = "0.4.44", features = ["serde"] }
 clap = { version = "4.5.60", features = ["derive"] }
 color-eyre = "0.6.5"
@@ -42,6 +43,8 @@ uuid = { version = "1.22.0", features = ["v4", "serde"] }
 validator = { version = "0.20.0", features = ["derive"] }
 
 [dev-dependencies]
+axum-test = { version = "19.1.1", features = ["typed-routing"] }
 insta = { version = "1.46.3", features = ["redactions", "filters"] }
+rstest = "0.26.1"
 serial = "0.4.0"
 serial_test = "3.4.0"
