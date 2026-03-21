@@ -59,10 +59,10 @@ impl<'a> RegisterUser<'a> {
 
 #[derive(Debug, Deserialize, Clone, Serialize, Validate)]
 pub struct LoginUser<'a> {
-    #[validate(email)]
+    #[validate(email(message = "Invalid email address"))]
     email: Cow<'a, str>,
 
-    #[validate(custom(function = "validate_password"))]
+    #[validate(length(min = 8, message = "Password must be atleast 8 characters long"))]
     password: Cow<'a, str>,
 }
 
