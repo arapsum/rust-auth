@@ -2,6 +2,8 @@ use insta::{Settings, assert_debug_snapshot, with_settings};
 use rstest::rstest;
 use serial_test::serial;
 
+use crate::utils;
+
 macro_rules! configure_insta {
     ($(expr:expr),*) => {
         let mut settings = Settings::clone_current();
@@ -99,8 +101,8 @@ async fn can_register_user(#[case] test_name: &str, #[case] params: serde_json::
 
         with_settings!({
             filters => {
-                let mut filters = crate::cleanup_date().to_vec();
-               filters.extend(crate::cleanup_uuid().to_vec());
+                let mut filters = utils::cleanup_date().to_vec();
+               filters.extend(utils::cleanup_uuid().to_vec());
                filters
             }
         },  {
@@ -145,10 +147,10 @@ async fn can_login_user(#[case] test_name: &str, #[case] params: serde_json::Val
 
         with_settings!({
             filters => {
-                let mut filters = crate::cleanup_date().to_vec();
-                filters.extend(crate::cleanup_uuid().to_vec());
-                filters.extend(crate::cleanup_jwt().to_vec());
-                filters.extend(crate::cleanup_headers());
+                let mut filters = utils::cleanup_date().to_vec();
+                filters.extend(utils::cleanup_uuid().to_vec());
+                filters.extend(utils::cleanup_jwt().to_vec());
+                filters.extend(utils::cleanup_headers());
                 filters
             }
         },  {

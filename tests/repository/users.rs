@@ -6,7 +6,10 @@ use insta::{Settings, assert_debug_snapshot, with_settings};
 use serial_test::serial;
 use uuid::Uuid;
 
-use crate::{boot_test, cleanup_date, cleanup_password, cleanup_uuid};
+use crate::{
+    boot_test,
+    utils::{cleanup_date, cleanup_password, cleanup_uuid},
+};
 
 macro_rules! configure_insta {
     ($(expr;expr),*) => {
@@ -53,7 +56,7 @@ async fn can_find_user_by_email() {
 
     let ctx = boot_test().await.unwrap();
 
-    App::seed(ctx.db()).await.unwrap();
+    crate::seed_data(ctx.db()).await.unwrap();
 
     let result = UserModel::find_user_by_email(ctx.db(), "jane.smith@globex.com").await;
 
