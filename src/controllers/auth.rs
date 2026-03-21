@@ -70,9 +70,10 @@ async fn login(
         serde_json::json!(LoginResponse::new(&access_token, user_response)).to_string(),
     ))?;
 
-    response
-        .headers_mut()
-        .append(AUTHORIZATION, HeaderValue::from_str(access_token.as_str())?);
+    response.headers_mut().append(
+        AUTHORIZATION,
+        HeaderValue::from_str(&format!("Bearer {}", access_token.as_str()))?,
+    );
     response.headers_mut().append(
         SET_COOKIE,
         HeaderValue::from_str(access_cookie.to_string().as_str())?,
@@ -91,7 +92,7 @@ async fn current(
     State(ctx): State<Arc<AppContext>>,
     Extension(claims): Extension<Claims>,
 ) -> Result<Response> {
-    let user = UserModel::find_user_by_claims_key(ctx.db(), claims.id()).await?;
+    let user = UserModel::find_user_by_claims_key(ctx.db(), claims.sub()).await?;
 
     Ok((StatusCode::OK, Json(UserResponse::new(&user))).into_response())
 }

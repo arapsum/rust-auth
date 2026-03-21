@@ -57,6 +57,13 @@ impl App {
 
         let ctx = AppContext::try_from(config)?;
 
+        match self.command {
+            Some(Commands::Seed) => {
+                Self::seed(ctx.db()).await?;
+            }
+            None => {}
+        }
+
         Ok(Arc::new(ctx))
     }
 
@@ -90,6 +97,7 @@ impl App {
         });
 
         let this = Self::parse();
+
         let config = this.config()?;
         let app_result = this.create().await?;
 

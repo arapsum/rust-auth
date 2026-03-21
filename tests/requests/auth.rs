@@ -102,8 +102,8 @@ async fn can_register_user(#[case] test_name: &str, #[case] params: serde_json::
         with_settings!({
             filters => {
                 let mut filters = utils::cleanup_date().to_vec();
-               filters.extend(utils::cleanup_uuid().to_vec());
-               filters
+                filters.extend(utils::cleanup_uuid().to_vec());
+                filters
             }
         },  {
             assert_debug_snapshot!(test_name, (response.status_code(), response.text()))
@@ -155,6 +155,44 @@ async fn can_login_user(#[case] test_name: &str, #[case] params: serde_json::Val
             }
         },  {
             assert_debug_snapshot!(test_name, (response.status_code(), response.headers(),response.text()))
+        })
+    })
+    .await;
+}
+
+#[rstest]
+#[case("can_get_current_user", serde_json::json!({
+    "email": "john.doe@acme.com",
+    "password": "Password"
+}))]
+#[tokio::test]
+#[serial]
+async fn can_get_current_user(#[case] test_name: &str, #[case] params: serde_json::Value) {
+    crate::request(|server, context| async move {
+        configure_insta!();
+
+        crate::seed_data(context.db())
+            .await
+            .expect("Failed to seed data");
+
+        let user: utils::LoggedInUser = utils::login_users(&server, &params).await;
+        let (auth_header, auth_value) = utils::auth_header(user.access_token);
+
+        let response = server
+            .get("/auth/me")
+            .add_header(auth_header, auth_value)
+            .add_cookie(user.access_cookie)
+            .add_cookie(user.refresh_cookie)
+            .await;
+
+        with_settings!({
+            filters => {
+                let mut filters = utils::cleanup_date().to_vec();
+                filters.extend(utils::cleanup_uuid().to_vec());
+                filters
+            }
+        },  {
+            assert_debug_snapshot!(test_name, (response.status_code(), response.text()))
         })
     })
     .await;

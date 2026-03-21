@@ -15,7 +15,7 @@ database:
 
 logger:
   level: trace
-  format: full
+  format: json
   crates:
     - auth
     - axum
@@ -25,10 +25,10 @@ logger:
   file_appender:
     enable: true
     non_blocking: true
-    rotation: daily # options: hourly, daily, weekly, monthly
+    rotation: hourly # options: hourly, daily, weekly, monthly
     directory: logs # default ./logs
     filename_prefix: auth_test
-    filename_suffix: .log
+    filename_suffix: log
     max_log_files: 30
 
 auth:
