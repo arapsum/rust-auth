@@ -1,6 +1,6 @@
 ---
 source: tests/repository/users.rs
-assertion_line: 76
+assertion_line: 79
 expression: result
 ---
 Ok(
@@ -11,6 +11,9 @@ Ok(
         password_hash: "$argon2d$v=19$m=16,t=2,p=1$cTZhOHVtY2dJTzBqYTBudw$/704JvCsW23pidisyXK+Tw",
         image: None,
         verified_at: None,
+        verification_token: "3c008e68-88fa-4072-808e-6888fa60724c",
+        reset_token: None,
+        reset_token_sent_at: None,
         created_at: 2024-12-20T11:45:00+00:00,
         updated_at: 2024-12-20T11:45:00+00:00,
     },

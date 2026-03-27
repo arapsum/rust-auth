@@ -2,7 +2,7 @@ use std::fmt::{self, Display};
 
 use jsonwebtoken::errors::{Error as JwtError, ErrorKind as JwtErrorKind};
 
-use crate::{repository::ModelError, validator::ValidationError};
+use crate::{mailer::MailerError, repository::ModelError, validator::ValidationError};
 
 pub mod response;
 
@@ -20,6 +20,8 @@ pub enum Error {
     IO(#[from] tokio::io::Error),
     #[error(transparent)]
     JwtError(JwtError),
+    #[error(transparent)]
+    Mailer(#[from] MailerError),
     #[error("Missing credentials")]
     MissingCredentials,
     #[error(transparent)]

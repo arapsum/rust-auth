@@ -24,6 +24,9 @@ pub struct UserModel {
     pub password_hash: String,
     pub image: Option<String>,
     pub verified_at: Option<DateTime<FixedOffset>>,
+    pub verification_token: String,
+    pub reset_token: Option<String>,
+    pub reset_token_sent_at: Option<DateTime<FixedOffset>>,
     pub created_at: DateTime<FixedOffset>,
     pub updated_at: DateTime<FixedOffset>,
 }
@@ -155,8 +158,8 @@ impl Seedable for UserModel {
         for user in data {
             sqlx::query(
                 r"
-                INSERT INTO users (id, email, username, password_hash, image, verified_at, created_at, updated_at)
-                VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+                INSERT INTO users (id, email, username, password_hash, image, verified_at, verification_token, created_at, updated_at)
+                VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
             ",
             )
             .bind(user.id)
@@ -165,6 +168,7 @@ impl Seedable for UserModel {
             .bind(user.password_hash.as_str())
             .bind(user.image.as_deref())
             .bind(user.verified_at)
+            .bind(user.verification_token.as_str())
             .bind(user.created_at)
             .bind(user.updated_at)
             .execute(db)

@@ -40,3 +40,14 @@ auth:
     private_key: secrets/keys/dev/refresh_key.pem
     public_key: secrets/keys/dev/refresh_key_pub.pem
     maxage: 604800 # 7 Days
+
+
+mailer:
+  smtp:
+    enable: true
+    host: {{ get_env(name = "MAILER_HOST", default= "localhost") }}
+    port: 1025
+    secure: false
+    auth:
+     # user:
+     # password:

@@ -24,6 +24,7 @@ pub struct Config {
     logger: Logger,
     database: DatabaseConfig,
     auth: AuthConfig,
+    mailer: MailerConfig,
 }
 
 impl Config {
@@ -45,6 +46,11 @@ impl Config {
     #[must_use]
     pub const fn server(&self) -> &ServerConfig {
         &self.server
+    }
+
+    #[must_use]
+    pub const fn mailer(&self) -> &MailerConfig {
+        &self.mailer
     }
 
     #[must_use]
@@ -225,6 +231,72 @@ impl AuthConfig {
     #[must_use]
     pub const fn refresh(&self) -> &JwtConfig {
         &self.refresh
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct MailerConfig {
+    pub(crate) smtp: SmtpConfig,
+}
+
+impl MailerConfig {
+    #[must_use]
+    pub fn smtp(&self) -> &SmtpConfig {
+        &self.smtp
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct SmtpConfig {
+    pub(crate) host: String,
+    pub(crate) port: u16,
+    pub(crate) secure: bool,
+    pub(crate) enable: bool,
+    pub(crate) auth: Option<MailerAuth>,
+}
+
+impl SmtpConfig {
+    #[must_use]
+    pub fn host(&self) -> &str {
+        &self.host
+    }
+
+    #[must_use]
+    pub fn port(&self) -> u16 {
+        self.port
+    }
+
+    #[must_use]
+    pub fn secure(&self) -> bool {
+        self.secure
+    }
+
+    #[must_use]
+    pub fn enable(&self) -> bool {
+        self.enable
+    }
+
+    #[must_use]
+    pub fn auth(&self) -> Option<&MailerAuth> {
+        self.auth.as_ref()
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct MailerAuth {
+    pub(crate) user: String,
+    pub(crate) password: String,
+}
+
+impl MailerAuth {
+    #[must_use]
+    pub fn user(&self) -> &str {
+        &self.user
+    }
+
+    #[must_use]
+    pub fn password(&self) -> &str {
+        &self.password
     }
 }
 

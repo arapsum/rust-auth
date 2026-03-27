@@ -1,6 +1,6 @@
 ---
 source: tests/repository/users.rs
-assertion_line: 44
+assertion_line: 48
 expression: result
 ---
 Ok(
@@ -11,6 +11,9 @@ Ok(
         password_hash: "PASSWORD",
         image: None,
         verified_at: None,
+        verification_token: "ID",
+        reset_token: None,
+        reset_token_sent_at: None,
         created_at: DATE,
         updated_at: DATE,
     },

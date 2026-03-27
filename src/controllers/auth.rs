@@ -17,6 +17,7 @@ use axum_extra::extract::cookie;
 use crate::{
     AppContext, Result,
     context::Claims,
+    mailer::AuthMailer,
     middlewares::{AppJson, AuthLayer},
     repository::UserModel,
     validator::{LoginUser, RegisterUser, Validator},
@@ -32,6 +33,8 @@ async fn register(
     let validated = validator.validate()?;
 
     let user = UserModel::register_user(ctx.db(), validated).await?;
+
+    AuthMailer::send_welcome(&ctx, &user).await?;
 
     Ok((StatusCode::CREATED, Json(UserResponse::new(&user))).into_response())
 }
@@ -64,10 +67,8 @@ async fn login(
         .same_site(cookie::SameSite::Lax)
         .secure(false);
 
-    let user_response = UserResponse::new(&user);
-
     let mut response = Response::builder().status(StatusCode::OK).body(Body::new(
-        serde_json::json!(LoginResponse::new(&access_token, user_response)).to_string(),
+        serde_json::json!(LoginResponse::new(&access_token, UserResponse::new(&user))).to_string(),
     ))?;
 
     response.headers_mut().append(

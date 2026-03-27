@@ -7,6 +7,9 @@ CREATE TABLE IF NOT EXISTS users (
     email VARCHAR(255) NOT NULL UNIQUE,
     password_hash VARCHAR(255) NOT NULL,
     verified_at TIMESTAMP WITH TIME ZONE,
+    verification_token VARCHAR(255) NOT NULL DEFAULT gen_random_uuid(),
+    reset_token VARCHAR(255),
+    reset_token_sent_at TIMESTAMP WITH TIME ZONE,
     image TEXT,
     created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP

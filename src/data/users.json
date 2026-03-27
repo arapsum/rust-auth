@@ -4,6 +4,7 @@
     "email": "john.doe@acme.com",
     "passwordHash": "$argon2d$v=19$m=12,t=3,p=1$dzhsemJycHJ4bTAwMDAwMA$gwggLXNwI8OgJmMXSP3Wdg",
     "username": "john_doe",
+    "verificationToken": "bd6f7c26-d2c9-487e-b837-8f77be468033",
     "image": null,
     "verifiedAt": "2024-12-21T09:00:00+00:00",
     "createdAt": "2024-12-21T09:00:00+00:00",
@@ -16,6 +17,7 @@
     "username": "jane_smith",
     "image": null,
     "verifiedAt": null,
+    "verificationToken": "e761d8e3-fc3e-4a2e-a6c9-7c7a4f2130e8",
     "createdAt": "2024-12-20T11:45:00+00:00",
     "updatedAt": "2024-12-21T09:15:00+00:00"
   },
@@ -26,6 +28,7 @@
     "username": "james_moriaty",
     "image": null,
     "verifiedAt": null,
+    "verificationToken": "3c008e68-88fa-4072-808e-6888fa60724c",
     "createdAt": "2024-12-20T11:45:00+00:00",
     "updatedAt": "2024-12-20T11:45:00+00:00"
   }

@@ -37,10 +37,12 @@ impl Error {
     #[must_use]
     pub fn response(&self) -> Response {
         let (status, message) = match self {
-            Self::Config(_) | Self::IO(_) | Self::Axum(_) | Self::JwtError(_) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "An internal server error occurred.".to_string(),
-            ),
+            Self::Config(_) | Self::IO(_) | Self::Axum(_) | Self::JwtError(_) | Self::Mailer(_) => {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "An internal server error occurred.".to_string(),
+                )
+            }
             Self::Model(err) => err.response_body(),
             Self::Validation(err) => (StatusCode::UNPROCESSABLE_ENTITY, err.to_string()),
             Self::Controller(err) => err.response_body(),
