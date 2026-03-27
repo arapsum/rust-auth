@@ -42,3 +42,6 @@ mailer:
     auth:
      # user:
      # password:
+
+redis:
+  url: {{ get_env(name="REDIS_URL", default="redis://127.0.0.1:6379") }}

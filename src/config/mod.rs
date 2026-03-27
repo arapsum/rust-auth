@@ -6,6 +6,7 @@ use std::{
 };
 
 use jsonwebtoken::{DecodingKey, EncodingKey};
+use redis::Client;
 use serde::{Deserialize, Serialize};
 use sqlx::{Pool, Postgres, migrate::Migrator, postgres::PgPoolOptions};
 use tera::{Context, Tera};
@@ -25,6 +26,7 @@ pub struct Config {
     database: DatabaseConfig,
     auth: AuthConfig,
     mailer: MailerConfig,
+    redis: RedisConfig,
 }
 
 impl Config {
@@ -66,6 +68,11 @@ impl Config {
     #[must_use]
     pub const fn auth(&self) -> &AuthConfig {
         &self.auth
+    }
+
+    #[must_use]
+    pub const fn redis(&self) -> &RedisConfig {
+        &self.redis
     }
 }
 
@@ -241,7 +248,7 @@ pub struct MailerConfig {
 
 impl MailerConfig {
     #[must_use]
-    pub fn smtp(&self) -> &SmtpConfig {
+    pub const fn smtp(&self) -> &SmtpConfig {
         &self.smtp
     }
 }
@@ -262,22 +269,22 @@ impl SmtpConfig {
     }
 
     #[must_use]
-    pub fn port(&self) -> u16 {
+    pub const fn port(&self) -> u16 {
         self.port
     }
 
     #[must_use]
-    pub fn secure(&self) -> bool {
+    pub const fn secure(&self) -> bool {
         self.secure
     }
 
     #[must_use]
-    pub fn enable(&self) -> bool {
+    pub const fn enable(&self) -> bool {
         self.enable
     }
 
     #[must_use]
-    pub fn auth(&self) -> Option<&MailerAuth> {
+    pub const fn auth(&self) -> Option<&MailerAuth> {
         self.auth.as_ref()
     }
 }
@@ -297,6 +304,19 @@ impl MailerAuth {
     #[must_use]
     pub fn password(&self) -> &str {
         &self.password
+    }
+}
+
+#[derive(Debug, Deserialize, Serialize, Clone)]
+pub struct RedisConfig {
+    pub url: String,
+}
+
+impl RedisConfig {
+    pub fn connection(&self) -> ConfigResult<Client> {
+        let client = Client::open(self.url.as_str())?;
+
+        Ok(client)
     }
 }
 

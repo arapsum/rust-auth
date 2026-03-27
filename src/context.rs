@@ -1,6 +1,7 @@
 #![allow(clippy::missing_errors_doc)]
 use chrono::{DateTime, Utc};
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation};
+use redis::Client;
 use serde::{Deserialize, Serialize};
 use sqlx::PgPool;
 use uuid::Uuid;
@@ -15,6 +16,7 @@ pub struct AppContext {
     db: PgPool,
     auth: AuthContext,
     config: Config,
+    redis: Client,
 }
 
 impl AppContext {
@@ -26,6 +28,11 @@ impl AppContext {
     #[must_use]
     pub const fn db(&self) -> &PgPool {
         &self.db
+    }
+
+    #[must_use]
+    pub const fn redis(&self) -> &Client {
+        &self.redis
     }
 
     #[must_use]
@@ -48,6 +55,7 @@ impl TryFrom<Config> for AppContext {
         Ok(Self {
             db: cfg.database().pool()?,
             auth: cfg.auth().try_into()?,
+            redis: cfg.redis().connection()?,
             config: cfg,
         })
     }
@@ -58,6 +66,7 @@ impl TryFrom<&Config> for AppContext {
 
     fn try_from(cfg: &Config) -> Result<Self, Self::Error> {
         Ok(Self {
+            redis: cfg.redis().connection()?,
             db: cfg.database().pool()?,
             auth: cfg.auth().try_into()?,
             config: cfg.clone(),
