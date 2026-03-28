@@ -9,6 +9,7 @@ pub mod repository;
 pub mod seed;
 pub mod validator;
 pub mod views;
+pub mod workers;
 
 pub use self::{
     app::App,

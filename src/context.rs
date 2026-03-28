@@ -1,4 +1,6 @@
 #![allow(clippy::missing_errors_doc)]
+use std::sync::{Arc, OnceLock};
+
 use chrono::{DateTime, Utc};
 use jsonwebtoken::{Algorithm, DecodingKey, EncodingKey, Header, Validation};
 use redis::Client;
@@ -9,6 +11,7 @@ use uuid::Uuid;
 use crate::{
     Error,
     config::{AuthConfig, Config, JwtConfig},
+    workers::MailQueue,
 };
 
 #[derive(Clone)]
@@ -17,6 +20,7 @@ pub struct AppContext {
     auth: AuthContext,
     config: Config,
     redis: Client,
+    queue: Arc<OnceLock<MailQueue>>,
 }
 
 impl AppContext {
@@ -40,6 +44,15 @@ impl AppContext {
         &self.auth
     }
 
+    #[must_use]
+    pub fn queue(&self) -> Option<&MailQueue> {
+        self.queue.get().map_or_else(|| None, Some)
+    }
+
+    pub fn set_queue(&self, queue: MailQueue) {
+        let _ = self.queue.set(queue);
+    }
+
     pub async fn init(&self) -> Result<(), crate::Error> {
         self.config().logger().setup()?;
         self.config().database().init().await?;
@@ -57,6 +70,7 @@ impl TryFrom<Config> for AppContext {
             auth: cfg.auth().try_into()?,
             redis: cfg.redis().connection()?,
             config: cfg,
+            queue: Arc::new(OnceLock::new()),
         })
     }
 }
@@ -70,6 +84,7 @@ impl TryFrom<&Config> for AppContext {
             db: cfg.database().pool()?,
             auth: cfg.auth().try_into()?,
             config: cfg.clone(),
+            queue: Arc::new(OnceLock::new()),
         })
     }
 }

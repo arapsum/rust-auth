@@ -13,6 +13,8 @@ name = "auth"
 path = "src/lib.rs"
 
 [dependencies]
+apalis = { version = "0.7.4", features = ["retry"] }
+apalis-redis = "0.7.4"
 argon2 = "0.5.3"
 async-trait = "0.1.89"
 axum = { version = "0.8.8", features = ["json", "macros"] }

@@ -1,5 +1,6 @@
 use std::sync::Arc;
 
+use apalis::prelude::Storage;
 use axum::{
     Extension, Json, Router,
     body::Body,
@@ -17,11 +18,11 @@ use axum_extra::extract::cookie;
 use crate::{
     AppContext, Result,
     context::Claims,
-    mailer::AuthMailer,
     middlewares::{AppJson, AuthLayer},
     repository::UserModel,
     validator::{LoginUser, RegisterUser, Validator},
     views::{LoginResponse, UserResponse},
+    workers::MailJob,
 };
 
 #[debug_handler]
@@ -34,7 +35,10 @@ async fn register(
 
     let user = UserModel::register_user(ctx.db(), validated).await?;
 
-    AuthMailer::send_welcome(&ctx, &user).await?;
+    if let Some(queue) = ctx.queue() {
+        let mut welcome = queue.welcome.clone();
+        welcome.push(MailJob { user_id: user.id }).await?;
+    }
 
     Ok((StatusCode::CREATED, Json(UserResponse::new(&user))).into_response())
 }

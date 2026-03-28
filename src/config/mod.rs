@@ -318,6 +318,11 @@ impl RedisConfig {
 
         Ok(client)
     }
+
+    #[must_use]
+    pub fn url(&self) -> &str {
+        &self.url
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Default, Serialize, Deserialize, Eq, PartialOrd, Ord)]

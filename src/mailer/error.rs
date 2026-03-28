@@ -4,6 +4,8 @@ pub enum MailerError {
     Address(#[from] lettre::address::AddressError),
     #[error("Input/output error")]
     IO,
+    #[error("Mailer initialisation error: {0}")]
+    Init(String),
     #[error(transparent)]
     Lettre(#[from] lettre::error::Error),
     #[error(transparent)]
@@ -16,4 +18,10 @@ pub enum MailerError {
     Template(#[from] handlebars::TemplateError),
 }
 
-pub type MailerResult<T> = std::result::Result<T, MailerError>;
+pub type MailerResult<T, E = MailerError> = std::result::Result<T, E>;
+
+impl From<&'static Self> for MailerError {
+    fn from(e: &'static Self) -> Self {
+        Self::Init(e.to_string())
+    }
+}

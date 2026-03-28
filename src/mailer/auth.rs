@@ -2,9 +2,9 @@
 
 use serde_json::json;
 
-use crate::{AppContext, Result, repository::UserModel};
+use crate::{AppContext, mailer::MailerError, repository::UserModel};
 
-use super::{Email, HandlebarsTemplate, MAILER_TEMPLATES, Mailer};
+use super::{Email, HandlebarsTemplate, MAILER_TEMPLATES, Mailer, MailerResult};
 
 pub struct AuthMailer {
     renderer: HandlebarsTemplate,
@@ -13,7 +13,7 @@ pub struct AuthMailer {
 impl Mailer for AuthMailer {}
 
 impl AuthMailer {
-    pub fn init() -> Result<Self> {
+    pub fn init() -> MailerResult<Self, &'static MailerError> {
         let renderer = MAILER_TEMPLATES.as_ref()?;
 
         Ok(Self {
@@ -26,7 +26,7 @@ impl AuthMailer {
     /// # Errors
     /// * SMTP Errors
     /// * Rendering Errors
-    pub async fn send_welcome(ctx: &AppContext, user: &UserModel) -> Result<()> {
+    pub async fn send_welcome(ctx: &AppContext, user: &UserModel) -> MailerResult<()> {
         let this = Self::init()?;
 
         let rendered = this.renderer.render_template(
@@ -60,7 +60,7 @@ impl AuthMailer {
     ///
     /// # Panics
     /// * This function will panic if the reset token is not set
-    pub async fn forgot_password(ctx: &AppContext, user: &UserModel) -> Result<()> {
+    pub async fn forgot_password(ctx: &AppContext, user: &UserModel) -> MailerResult<()> {
         let this = Self::init()?;
 
         let rendered = this.renderer.render_template(
