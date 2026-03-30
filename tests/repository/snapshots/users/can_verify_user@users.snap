@@ -1,0 +1,22 @@
+---
+source: tests/repository/users.rs
+assertion_line: 116
+expression: result
+---
+Ok(
+    UserModel {
+        id: e761d8e3-fc3e-4a2e-a6c9-7c7a4f2130e8,
+        email: "jane.smith@globex.com",
+        username: "jane_smith",
+        password_hash: "$argon2d$v=19$m=12,t=3,p=1$cmk2anZmdmQ4eTAwMDAwMA$twYxAHf+ipQw84lCBUVK+w",
+        image: None,
+        verified_at: Some(
+            DATE,
+        ),
+        verification_token: "e761d8e3-fc3e-4a2e-a6c9-7c7a4f2130e8",
+        reset_token: None,
+        reset_token_sent_at: None,
+        created_at: DATE,
+        updated_at: DATE,
+    },
+)

@@ -5,7 +5,7 @@ use axum::{
     Extension, Json, Router,
     body::Body,
     debug_handler,
-    extract::State,
+    extract::{Path, State},
     http::{
         HeaderValue, StatusCode,
         header::{AUTHORIZATION, SET_COOKIE},
@@ -41,6 +41,13 @@ async fn register(
     }
 
     Ok((StatusCode::CREATED, Json(UserResponse::new(&user))).into_response())
+}
+
+#[debug_handler]
+async fn verify(State(ctx): State<Arc<AppContext>>, Path(token): Path<String>) -> Result<Response> {
+    let user = UserModel::verify_user(ctx.db(), &token).await?;
+
+    Ok((StatusCode::OK, Json(UserResponse::new(&user))).into_response())
 }
 
 #[debug_handler]
@@ -107,5 +114,6 @@ pub fn router(ctx: &Arc<AppContext>) -> Router {
         .route("/sign-up", post(register))
         .route("/sign-in", post(login))
         .route("/me", get(current).layer(AuthLayer::new(ctx.clone())))
+        .route("/verify/{token}", get(verify))
         .with_state(ctx.clone())
 }

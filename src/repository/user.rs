@@ -3,7 +3,7 @@ use argon2::{
     Argon2, PasswordHash, PasswordVerifier,
     password_hash::{PasswordHasher, SaltString, rand_core::OsRng},
 };
-use chrono::{DateTime, FixedOffset};
+use chrono::{DateTime, FixedOffset, Utc};
 use serde::{Deserialize, Serialize};
 use sqlx::{Encode, Executor, PgPool, Postgres, prelude::FromRow};
 use uuid::Uuid;
@@ -122,6 +122,40 @@ impl UserModel {
         )
         .bind(email)
         .fetch_optional(db)
+        .await?;
+
+        Ok(user)
+    }
+
+    pub async fn find_user_by_verification_token<'e, C>(db: &C, token: &str) -> ModelResult<Self>
+    where
+        for<'a> &'a C: Executor<'e, Database = Postgres>,
+    {
+        let user = sqlx::query_as::<_, Self>(r"SELECT * FROM users WHERE verification_token = $1")
+            .bind(token)
+            .fetch_optional(db)
+            .await?;
+
+        user.ok_or_else(|| ModelError::EntityNotFound)
+    }
+
+    pub async fn verify_user<'e, C>(db: &C, token: &str) -> ModelResult<Self>
+    where
+        for<'a> &'a C: Executor<'e, Database = Postgres>,
+    {
+        let now = Utc::now().fixed_offset();
+
+        let user = sqlx::query_as::<_, Self>(
+            r"
+            UPDATE users
+            SET verified_at = $1
+            WHERE verification_token = $2
+            RETURNING *
+        ",
+        )
+        .bind(now)
+        .bind(token)
+        .fetch_one(db)
         .await?;
 
         Ok(user)

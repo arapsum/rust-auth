@@ -1,10 +1,10 @@
 use chrono::{DateTime, FixedOffset};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
 use crate::repository::UserModel;
 
-#[derive(Debug, Serialize, Clone)]
+#[derive(Debug, Serialize, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UserResponse {
     pub id: Uuid,

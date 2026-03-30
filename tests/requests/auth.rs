@@ -1,3 +1,4 @@
+use auth::{repository::UserModel, views::UserResponse};
 use insta::{Settings, assert_debug_snapshot, with_settings};
 use rstest::rstest;
 use serial_test::serial;
@@ -194,6 +195,48 @@ async fn can_get_current_user(#[case] test_name: &str, #[case] params: serde_jso
             }
         },  {
             assert_debug_snapshot!(test_name, (response.status_code(), response.text()))
+        })
+    })
+    .await;
+}
+
+#[tokio::test]
+#[serial]
+async fn can_verify_user(#[case] test_name: &str, #[case] params: serde_json::Value) {
+    crate::request(|server, ctx| async move {
+        configure_insta!();
+
+        crate::seed_data(ctx.db())
+            .await
+            .expect("Failed to seed data");
+
+        let params = serde_json::json!({
+        "email":  "test1@example.com",
+        "username": "test_user1",
+        "password": "SafePassWord11!",
+        "confirmPassword": "SafePassWord11!"
+        });
+
+        let register_response = server.post("/auth/sign-up").json(&params).await;
+
+        let user_response = register_response.json::<UserResponse>();
+
+        let user = UserModel::find_user_by_id(ctx.db(), user_response.id)
+            .await
+            .unwrap();
+
+        let response = server
+            .get(&format!("/auth/verify/{}", user.verification_token))
+            .await;
+
+        with_settings!({
+            filters => {
+                let mut filters = utils::cleanup_date().to_vec();
+                filters.extend(utils::cleanup_uuid().to_vec());
+                filters
+            }
+        },  {
+            assert_debug_snapshot!((response.status_code(), response.text()))
         })
     })
     .await;

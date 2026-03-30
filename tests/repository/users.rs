@@ -94,3 +94,25 @@ async fn can_find_user_by_claims_key() {
 
     assert_debug_snapshot!(result);
 }
+
+#[tokio::test]
+#[serial]
+async fn can_verify_user() {
+    configure_insta!();
+
+    let ctx = boot_test().await.unwrap();
+
+    App::seed(ctx.db()).await.unwrap();
+
+    let token = "e761d8e3-fc3e-4a2e-a6c9-7c7a4f2130e8";
+
+    let result = UserModel::verify_user(ctx.db(), token).await;
+
+    with_settings!({
+        filters => {
+            cleanup_date().to_vec()
+        }
+    }, {
+        assert_debug_snapshot!(result);
+    })
+}
