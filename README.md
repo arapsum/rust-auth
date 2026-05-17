@@ -1,6 +1,7 @@
 # AUTH
 
-A stateless authentication service built in Rust, featuring JWT-based access and refresh token flows backed by PostgreSQL.
+A stateless authentication service built in Rust, featuring JWT-based access and
+refresh token flows backed by PostgreSQL.
 
 ---
 
