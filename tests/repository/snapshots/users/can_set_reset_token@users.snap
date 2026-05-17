@@ -1,0 +1,24 @@
+---
+source: tests/repository/users.rs
+assertion_line: 140
+expression: result
+---
+Ok(
+    UserModel {
+        id: ID,
+        email: "jane.smith@globex.com",
+        username: "jane_smith",
+        password_hash: "$argon2d$v=19$m=12,t=3,p=1$cmk2anZmdmQ4eTAwMDAwMA$twYxAHf+ipQw84lCBUVK+w",
+        image: None,
+        verified_at: None,
+        verification_token: "ID",
+        reset_token: Some(
+            "ID",
+        ),
+        reset_token_sent_at: Some(
+            DATE,
+        ),
+        created_at: DATE,
+        updated_at: DATE,
+    },
+)

@@ -1,7 +1,11 @@
 #![allow(unused_imports)]
 use std::borrow::Cow;
 
-use auth::{App, repository::UserModel, validator::RegisterUser};
+use auth::{
+    App,
+    repository::UserModel,
+    validator::{RegisterUser, auth::ResetPassword},
+};
 use insta::{Settings, assert_debug_snapshot, with_settings};
 use serial_test::serial;
 use uuid::Uuid;
@@ -111,6 +115,64 @@ async fn can_verify_user() {
     with_settings!({
         filters => {
             cleanup_date().to_vec()
+        }
+    }, {
+        assert_debug_snapshot!(result);
+    })
+}
+
+#[tokio::test]
+#[serial]
+async fn can_set_reset_token() {
+    configure_insta!();
+
+    let ctx = boot_test().await.unwrap();
+
+    App::seed(ctx.db()).await.unwrap();
+
+    let email = "jane.smith@globex.com";
+
+    let result = UserModel::forgot_password(ctx.db(), email).await;
+
+    with_settings!({
+        filters => {
+            let mut filters = cleanup_date().to_vec();
+            filters.extend(cleanup_uuid().to_vec());
+            filters
+        }
+    }, {
+        assert_debug_snapshot!(result);
+    })
+}
+
+#[tokio::test]
+#[serial]
+async fn can_reset_password() {
+    configure_insta!();
+
+    let ctx = boot_test().await.unwrap();
+
+    App::seed(ctx.db()).await.unwrap();
+
+    let email = "jane.smith@globex.com";
+
+    let user = UserModel::forgot_password(ctx.db(), email).await.unwrap();
+
+    let reset_token = user.reset_token.unwrap();
+
+    let params = ResetPassword::new(
+        Cow::Borrowed(&reset_token),
+        Cow::Borrowed("NewPassword123!"),
+        Cow::Borrowed("NewPassword123"),
+    );
+
+    let result = UserModel::reset_password(ctx.db(), &params).await;
+
+    with_settings!({
+        filters => {
+            let mut filters = cleanup_date().to_vec();
+            filters.extend(cleanup_password().to_vec());
+            filters
         }
     }, {
         assert_debug_snapshot!(result);

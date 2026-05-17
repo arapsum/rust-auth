@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 use crate::{
     seed::Seedable,
-    validator::{LoginUser, RegisterUser},
+    validator::{LoginUser, RegisterUser, auth::ResetPassword},
 };
 
 use super::{ModelError, ModelResult};
@@ -155,6 +155,82 @@ impl UserModel {
         )
         .bind(now)
         .bind(token)
+        .fetch_one(db)
+        .await?;
+
+        Ok(user)
+    }
+
+    pub async fn forgot_password<'e, C>(db: &C, email: &str) -> ModelResult<Self>
+    where
+        for<'a> &'a C: Executor<'e, Database = Postgres>,
+    {
+        let user = sqlx::query_as::<_, Self>(
+            r"
+            UPDATE users
+            SET
+                reset_token = $1,
+                reset_token_sent_at = $2
+            WHERE email = $3
+            RETURNING *
+        ",
+        )
+        .bind(Uuid::new_v4())
+        .bind(Utc::now().fixed_offset())
+        .bind(email.trim())
+        .fetch_one(db)
+        .await?;
+
+        Ok(user)
+    }
+
+    pub async fn reset_password(db: &PgPool, params: &ResetPassword<'_>) -> ModelResult<Self> {
+        let mut txn = db.begin().await?;
+
+        let mut user = Self::find_user_by_reset_token(&mut *txn, params.token()).await?;
+
+        user = user.set_new_password(&mut *txn, params.password()).await?;
+
+        txn.commit().await?;
+
+        Ok(user)
+    }
+
+    pub async fn find_user_by_reset_token<'e, C>(db: C, token: &str) -> ModelResult<Self>
+    where
+        C: Executor<'e, Database = Postgres>,
+    {
+        let user = sqlx::query_as::<_, Self>(
+            r"
+            SELECT * FROM users WHERE reset_token = $1
+        ",
+        )
+        .bind(token)
+        .fetch_optional(db)
+        .await?;
+
+        user.ok_or_else(|| ModelError::EntityNotFound)
+    }
+
+    pub async fn set_new_password<'e, C>(&self, db: C, new_password: &str) -> ModelResult<Self>
+    where
+        C: Executor<'e, Database = Postgres>,
+    {
+        let password = Self::hash_password(new_password)?;
+
+        let user = sqlx::query_as::<_, Self>(
+            r"
+            UPDATE users
+            SET
+                password_hash = $2,
+                reset_token = null,
+                reset_token_sent_at = null
+            WHERE reset_token = $1
+            RETURNING *
+        ",
+        )
+        .bind(&self.reset_token)
+        .bind(password)
         .fetch_one(db)
         .await?;
 
