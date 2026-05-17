@@ -161,11 +161,20 @@ impl UserModel {
         Ok(user)
     }
 
-    pub async fn forgot_password<'e, C>(db: &C, email: &str) -> ModelResult<Self>
-    where
-        for<'a> &'a C: Executor<'e, Database = Postgres>,
-    {
-        let user = sqlx::query_as::<_, Self>(
+    pub async fn forgot_password(db: &PgPool, email: &str) -> ModelResult<Self> {
+        let mut txn = db.begin().await?;
+
+        let mut user = sqlx::query_as::<_, Self>(
+            r"
+            SELECT * FROM users WHERE email = $1
+        ",
+        )
+        .bind(email.trim())
+        .fetch_optional(&mut *txn)
+        .await?
+        .ok_or(ModelError::EntityNotFound)?;
+
+        user = sqlx::query_as::<_, Self>(
             r"
             UPDATE users
             SET
@@ -177,9 +186,11 @@ impl UserModel {
         )
         .bind(Uuid::new_v4())
         .bind(Utc::now().fixed_offset())
-        .bind(email.trim())
-        .fetch_one(db)
+        .bind(&user.email)
+        .fetch_one(&mut *txn)
         .await?;
+
+        txn.commit().await?;
 
         Ok(user)
     }

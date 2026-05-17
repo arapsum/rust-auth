@@ -47,3 +47,17 @@ impl LoginResponse {
         }
     }
 }
+
+#[derive(Debug, Serialize, Clone)]
+#[serde(rename_all = "camelCase")]
+pub struct AuthResponse {
+    message: String,
+}
+
+impl AuthResponse {
+    pub fn new<T: Into<String>>(msg: T) -> Self {
+        Self {
+            message: msg.into(),
+        }
+    }
+}

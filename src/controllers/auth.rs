@@ -20,8 +20,8 @@ use crate::{
     context::Claims,
     middlewares::{AppJson, AuthLayer},
     repository::UserModel,
-    validator::{LoginUser, RegisterUser, Validator},
-    views::{LoginResponse, UserResponse},
+    validator::{LoginUser, RegisterUser, Validator, auth::ForgotPassword},
+    views::{AuthResponse, LoginResponse, UserResponse},
     workers::MailJob,
 };
 
@@ -48,6 +48,30 @@ async fn verify(State(ctx): State<Arc<AppContext>>, Path(token): Path<String>) -
     let user = UserModel::verify_user(ctx.db(), &token).await?;
 
     Ok((StatusCode::OK, Json(UserResponse::new(&user))).into_response())
+}
+
+#[debug_handler]
+async fn forgot(
+    State(ctx): State<Arc<AppContext>>,
+    Json(params): Json<ForgotPassword<'static>>,
+) -> Result<Response> {
+    let validator = Validator::new(params);
+    let validated = validator.validate()?;
+
+    let user = UserModel::forgot_password(ctx.db(), validated.email()).await?;
+
+    if let Some(queue) = ctx.queue() {
+        let mut forgot = queue.forgot.clone();
+        forgot.push(MailJob { user_id: user.id }).await?;
+    }
+
+    Ok((
+        StatusCode::OK,
+        Json(AuthResponse::new(
+            "An email with a password reset link has been sent to your email inbox.",
+        )),
+    )
+        .into_response())
 }
 
 #[debug_handler]
@@ -113,6 +137,7 @@ pub fn router(ctx: &Arc<AppContext>) -> Router {
     Router::new()
         .route("/sign-up", post(register))
         .route("/sign-in", post(login))
+        .route("/forgot-password", post(forgot))
         .route("/me", get(current).layer(AuthLayer::new(ctx.clone())))
         .route("/verify/{token}", get(verify))
         .with_state(ctx.clone())

@@ -3,7 +3,7 @@
 use std::sync::Arc;
 
 use apalis::prelude::*;
-use apalis_redis::{ConnectionManager, RedisStorage};
+use apalis_redis::{Config, ConnectionManager, RedisStorage};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -24,8 +24,14 @@ impl MailQueue {
         let conn: ConnectionManager = apalis_redis::connect(cfg.url()).await?;
 
         Ok(Self {
-            welcome: RedisStorage::new(conn.clone()),
-            forgot: RedisStorage::new(conn),
+            welcome: RedisStorage::new_with_config(
+                conn.clone(),
+                Config::default().set_namespace("welcome-queue"),
+            ),
+            forgot: RedisStorage::new_with_config(
+                conn,
+                Config::default().set_namespace("forgot-queue"),
+            ),
         })
     }
 }
