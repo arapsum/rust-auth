@@ -15,7 +15,6 @@ macro_rules! configure_insta {
     };
 }
 
-#[ignore = "will fail in Github actions"]
 #[rstest]
 #[case(
     "can_successfully_register_user",
@@ -100,6 +99,45 @@ async fn can_register_user(#[case] test_name: &str, #[case] params: serde_json::
             .expect("Failed to seed data");
 
         let response = server.post("/auth/sign-up").json(&params).await;
+
+        with_settings!({
+            filters => {
+                let mut filters = utils::cleanup_date().to_vec();
+                filters.extend(utils::cleanup_uuid().to_vec());
+                filters
+            }
+        },  {
+            assert_debug_snapshot!(test_name, (response.status_code(), response.text()))
+        })
+    })
+    .await;
+}
+
+#[ignore = "will fail in Github actions because of no mailtutan"]
+#[rstest]
+#[case(
+    "can_set_reset_token_when_user_exists",
+    serde_json::json!({
+        "email":  "james.moriaty@continental.org",
+    })
+)]
+#[case(
+    "when_user_does_not_exist_forgot_password_fails",
+    serde_json::json!({
+        "email":  "test1@example.com",
+    })
+)]
+#[tokio::test]
+#[serial]
+async fn can_forgot_password(#[case] test_name: &str, #[case] params: serde_json::Value) {
+    crate::request(|server, ctx| async move {
+        configure_insta!();
+
+        crate::seed_data(ctx.db())
+            .await
+            .expect("Failed to seed data");
+
+        let response = server.post("/auth/forgot-password").json(&params).await;
 
         with_settings!({
             filters => {

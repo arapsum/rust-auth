@@ -82,6 +82,17 @@ jobs:
           --health-timeout 5s
           --health-retries 5
 
+      redis:
+        image: redis:8.6-alpine
+        ports:
+          - "6379:6379"
+
+      mailer:
+        image: mailtutan/mailtutan:latest
+        ports:
+          - "1080:1080"
+          - "1025:1025"
+
     steps:
       - name: Checkout the code
         uses: actions/checkout@v4
