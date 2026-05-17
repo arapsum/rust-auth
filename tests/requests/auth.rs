@@ -113,7 +113,6 @@ async fn can_register_user(#[case] test_name: &str, #[case] params: serde_json::
     .await;
 }
 
-#[ignore = "will fail in Github actions because of no mailtutan"]
 #[rstest]
 #[case(
     "can_set_reset_token_when_user_exists",
