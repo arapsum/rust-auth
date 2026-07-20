@@ -5,7 +5,7 @@ use axum::{
     Extension, Json, Router,
     body::Body,
     debug_handler,
-    extract::{Path, State},
+    extract::State,
     http::{
         HeaderValue, StatusCode,
         header::{AUTHORIZATION, SET_COOKIE},
@@ -20,7 +20,7 @@ use crate::{
     context::Claims,
     middlewares::AuthLayer,
     repository::UserModel,
-    utils::AppJson,
+    utils::{AppJson, AppPath},
     validator::{LoginUser, RegisterUser, Validator, auth::ForgotPassword},
     views::{AuthResponse, LoginResponse, UserResponse},
     workers::MailJob,
@@ -45,7 +45,10 @@ async fn register(
 }
 
 #[debug_handler]
-async fn verify(State(ctx): State<Arc<AppContext>>, Path(token): Path<String>) -> Result<Response> {
+async fn verify(
+    State(ctx): State<Arc<AppContext>>,
+    AppPath(token): AppPath<String>,
+) -> Result<Response> {
     let user = UserModel::verify_user(ctx.db(), &token).await?;
 
     Ok((StatusCode::OK, Json(UserResponse::new(&user))).into_response())

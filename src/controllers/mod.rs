@@ -3,14 +3,12 @@ use std::sync::Arc;
 use axum::{
     Json, Router,
     http::{StatusCode, Uri},
+    response::{IntoResponse, Response},
 };
 
-use crate::AppContext;
+use crate::{AppContext, error::response::ErrorResponse};
 
 pub mod auth;
-pub mod error;
-
-pub use self::error::{ControllerError, ControllerResult};
 
 pub fn router(ctx: &Arc<AppContext>) -> Router {
     Router::new()
@@ -23,9 +21,10 @@ pub fn router(ctx: &Arc<AppContext>) -> Router {
         .nest("/auth", auth::router(ctx))
 }
 
-pub(crate) async fn fallback(uri: Uri) -> (StatusCode, Json<serde_json::Value>) {
+pub(crate) async fn fallback(_uri: Uri) -> Response {
     (
         StatusCode::NOT_FOUND,
-        Json(serde_json::json!({"message": format!("Page not found {uri}")})),
+        Json(ErrorResponse::new("Route not found", "route_not_found")),
     )
+        .into_response()
 }

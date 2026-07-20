@@ -279,3 +279,35 @@ async fn can_verify_user(#[case] test_name: &str, #[case] params: serde_json::Va
     })
     .await;
 }
+
+#[tokio::test]
+#[serial]
+async fn reports_request_rejections_consistently() {
+    crate::request(|server, _ctx| async move {
+        let malformed_json = server
+            .post("/auth/sign-up")
+            .text("{\"email\":")
+            .content_type("application/json")
+            .await;
+        assert_eq!(malformed_json.status_code(), 400);
+        assert_eq!(
+            malformed_json.text(),
+            r#"{"error":"Request body contains malformed JSON","code":"invalid_json"}"#
+        );
+
+        let invalid_content_type = server.post("/auth/sign-up").text("{}").await;
+        assert_eq!(invalid_content_type.status_code(), 415);
+        assert_eq!(
+            invalid_content_type.text(),
+            r#"{"error":"Expected a JSON request body","code":"invalid_content_type"}"#
+        );
+
+        let invalid_path = server.get("/auth/verify/%FF").await;
+        assert_eq!(invalid_path.status_code(), 400);
+        assert_eq!(
+            invalid_path.text(),
+            r#"{"error":"Invalid path parameter","code":"invalid_path_parameter","field":"token"}"#
+        );
+    })
+    .await;
+}
