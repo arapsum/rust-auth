@@ -18,8 +18,9 @@ use axum_extra::extract::cookie;
 use crate::{
     AppContext, Result,
     context::Claims,
-    middlewares::{AppJson, AuthLayer},
+    middlewares::AuthLayer,
     repository::UserModel,
+    utils::AppJson,
     validator::{LoginUser, RegisterUser, Validator, auth::ForgotPassword},
     views::{AuthResponse, LoginResponse, UserResponse},
     workers::MailJob,
@@ -53,7 +54,7 @@ async fn verify(State(ctx): State<Arc<AppContext>>, Path(token): Path<String>) -
 #[debug_handler]
 async fn forgot(
     State(ctx): State<Arc<AppContext>>,
-    Json(params): Json<ForgotPassword<'static>>,
+    AppJson(params): AppJson<ForgotPassword<'static>>,
 ) -> Result<Response> {
     let validator = Validator::new(params);
     let validated = validator.validate()?;

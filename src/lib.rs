@@ -7,6 +7,7 @@ pub mod mailer;
 pub mod middlewares;
 pub mod repository;
 pub mod seed;
+pub mod utils;
 pub mod validator;
 pub mod views;
 pub mod workers;
