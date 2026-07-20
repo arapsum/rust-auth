@@ -169,7 +169,6 @@ fn json_rejection_response(rejection: &JsonRejection) -> (StatusCode, String) {
 
 const fn json_rejection_code(rejection: &JsonRejection) -> &'static str {
     match rejection {
-        JsonRejection::JsonDataError(_) | JsonRejection::JsonSyntaxError(_) => "invalid_json",
         JsonRejection::MissingJsonContentType(_) => "invalid_content_type",
         JsonRejection::BytesRejection(_) => "invalid_request_body",
         _ => "invalid_json",

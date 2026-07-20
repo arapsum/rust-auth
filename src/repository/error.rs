@@ -52,18 +52,10 @@ impl ModelError {
             ),
             Self::EntityAlreadyExists => (StatusCode::CONFLICT, "Entity already exists".into()),
             Self::EntityNotFound => (StatusCode::NOT_FOUND, "Entity not found".into()),
-            Self::SqlxError(_) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "An internal server error occurred.".into(),
-            ),
             Self::InvalidCredentials => {
                 (StatusCode::UNAUTHORIZED, "Invalid email or password".into())
             }
             Self::InvalidClaimsKey => (StatusCode::FORBIDDEN, "Invalid claims key".into()),
-            Self::PasswordHash(_) => (
-                StatusCode::INTERNAL_SERVER_ERROR,
-                "An internal server error occurred.".into(),
-            ),
             _ => (
                 StatusCode::INTERNAL_SERVER_ERROR,
                 "An internal server error occurred.".into(),
