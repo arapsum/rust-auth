@@ -2,32 +2,20 @@ use std::fmt::{self, Display};
 
 use jsonwebtoken::errors::{Error as JwtError, ErrorKind as JwtErrorKind};
 
-use crate::{mailer::MailerError, repository::ModelError};
-
 pub mod response;
 
 #[derive(Debug, thiserror::Error)]
 pub enum Error {
     #[error(transparent)]
-    Axum(#[from] axum::Error),
-    #[error(transparent)]
     Config(#[from] crate::config::ConfigError),
-    #[error(transparent)]
-    Controller(#[from] crate::controllers::ControllerError),
     #[error("Invalid authorisation token")]
     InvalidToken,
-    #[error(transparent)]
-    IO(#[from] tokio::io::Error),
     #[error(transparent)]
     JsonRejection(#[from] axum::extract::rejection::JsonRejection),
     #[error(transparent)]
     JwtError(JwtError),
-    #[error(transparent)]
-    Mailer(#[from] MailerError),
     #[error("Missing credentials")]
     MissingCredentials,
-    #[error(transparent)]
-    Model(#[from] ModelError),
     #[error(transparent)]
     PathRejection(#[from] axum::extract::rejection::PathRejection),
     #[error("Session expired")]

@@ -1,12 +1,13 @@
 use axum::{
     Json,
+    extract::rejection::JsonRejection,
     http::StatusCode,
     response::{IntoResponse, Response},
 };
 use serde::Serialize;
 use serde_json::Value;
 
-use crate::{controllers::ControllerError, repository::ModelError, validator::ValidationError};
+use crate::repository::ModelError;
 
 use super::{Error, Report};
 
@@ -42,6 +43,11 @@ impl ErrorResponse {
         self.details = details;
         self
     }
+
+    #[must_use]
+    pub fn into_response(self, status: StatusCode) -> Response {
+        (status, Json(self)).into_response()
+    }
 }
 
 impl IntoResponse for Report {
@@ -55,17 +61,10 @@ impl IntoResponse for Report {
             return error.response();
         } else if let Some(error) = err.downcast_ref::<ModelError>() {
             return error.response();
-        } else if let Some(error) = err.downcast_ref::<ControllerError>() {
-            return error.response();
-        } else if let Some(error) = err.downcast_ref::<ValidationError>() {
-            return error.response();
         }
 
-        let body = Json(serde_json::json!({
-            "error": "An internal server error occurred."
-        }));
-
-        (StatusCode::INTERNAL_SERVER_ERROR, body).into_response()
+        ErrorResponse::new("An internal server error occurred.", "internal_error")
+            .into_response(StatusCode::INTERNAL_SERVER_ERROR)
     }
 }
 
@@ -73,15 +72,11 @@ impl Error {
     #[must_use]
     pub fn response_body(&self) -> (StatusCode, String) {
         let (status, message) = match self {
-            Self::Config(_) | Self::IO(_) | Self::Axum(_) | Self::JwtError(_) | Self::Mailer(_) => {
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "An internal server error occurred.".to_string(),
-                )
-            }
-            Self::Model(err) => err.response_body(),
+            Self::Config(_) | Self::JwtError(_) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "An internal server error occurred.".to_string(),
+            ),
             Self::ValidationError(err) => (StatusCode::UNPROCESSABLE_ENTITY, err.clone()),
-            Self::Controller(err) => err.response_body(),
             Self::InvalidToken => (
                 StatusCode::UNAUTHORIZED,
                 "Invalid authorisation token".to_string(),
@@ -94,8 +89,10 @@ impl Error {
                 StatusCode::UNAUTHORIZED,
                 "Session expired. Please log in again.".to_string(),
             ),
-            Self::JsonRejection(rejection) => (rejection.status(), rejection.body_text()),
-            Self::PathRejection(rejection) => (rejection.status(), rejection.body_text()),
+            Self::JsonRejection(rejection) => json_rejection_response(rejection),
+            Self::PathRejection(rejection) => {
+                (rejection.status(), "Invalid path parameter".to_string())
+            }
         };
 
         (status, message)
@@ -124,7 +121,7 @@ impl Error {
             Self::SessionExpired => "session_expired",
             Self::ValidationError(_) => "validation_error",
             Self::PathRejection(_) => "invalid_path_parameter",
-            Self::JsonRejection(_) => "invalid_json",
+            Self::JsonRejection(rejection) => json_rejection_code(rejection),
             _ => "internal_error",
         }
     }
@@ -138,16 +135,51 @@ impl Error {
             message = "One or more fields failed validation".to_string();
         }
 
-        let mut body = ErrorResponse::new(message, self.code());
-        body = body.set_field(self.field());
-        body = body.set_details(self.details());
+        ErrorResponse::new(message, self.code())
+            .set_field(self.field())
+            .set_details(self.details())
+            .into_response(status)
+    }
+}
 
-        (status, Json(body)).into_response()
+fn json_rejection_response(rejection: &JsonRejection) -> (StatusCode, String) {
+    match rejection {
+        JsonRejection::JsonDataError(_) => (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            "Request JSON does not match the expected schema".to_string(),
+        ),
+        JsonRejection::JsonSyntaxError(_) => (
+            StatusCode::BAD_REQUEST,
+            "Request body contains malformed JSON".to_string(),
+        ),
+        JsonRejection::MissingJsonContentType(_) => (
+            StatusCode::UNSUPPORTED_MEDIA_TYPE,
+            "Expected a JSON request body".to_string(),
+        ),
+        JsonRejection::BytesRejection(_) => (
+            StatusCode::BAD_REQUEST,
+            "Unable to read request body".to_string(),
+        ),
+        _ => (
+            rejection.status(),
+            "Unable to process JSON request body".to_string(),
+        ),
+    }
+}
+
+const fn json_rejection_code(rejection: &JsonRejection) -> &'static str {
+    match rejection {
+        JsonRejection::JsonDataError(_) | JsonRejection::JsonSyntaxError(_) => "invalid_json",
+        JsonRejection::MissingJsonContentType(_) => "invalid_content_type",
+        JsonRejection::BytesRejection(_) => "invalid_request_body",
+        _ => "invalid_json",
     }
 }
 
 fn path_parameter_name(message: &str) -> Option<String> {
-    let (_, remainder) = message.split_once("Cannot parse `")?;
+    let (_, remainder) = message
+        .split_once("Cannot parse `")
+        .or_else(|| message.split_once("Invalid UTF-8 in `"))?;
     let (field, _) = remainder.split_once('`')?;
 
     (!field.is_empty()

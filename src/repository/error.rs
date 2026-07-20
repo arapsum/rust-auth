@@ -1,9 +1,7 @@
 use argon2::password_hash::Error as ArgonError;
-use axum::{
-    Json,
-    http::StatusCode,
-    response::{IntoResponse, Response},
-};
+use axum::{http::StatusCode, response::Response};
+
+use crate::error::response::ErrorResponse;
 
 #[derive(Debug, thiserror::Error)]
 pub enum ModelError {
@@ -54,28 +52,40 @@ impl ModelError {
             ),
             Self::EntityAlreadyExists => (StatusCode::CONFLICT, "Entity already exists".into()),
             Self::EntityNotFound => (StatusCode::NOT_FOUND, "Entity not found".into()),
-            Self::SqlxError(err) => {
-                tracing::error!("SQLX Error {}", err);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "An internal server error has occurred".into(),
-                )
-            }
+            Self::SqlxError(_) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "An internal server error occurred.".into(),
+            ),
             Self::InvalidCredentials => {
                 (StatusCode::UNAUTHORIZED, "Invalid email or password".into())
             }
             Self::InvalidClaimsKey => (StatusCode::FORBIDDEN, "Invalid claims key".into()),
-            Self::PasswordHash(e) => {
-                tracing::error!("Argon2 Error {}", e);
-                (
-                    StatusCode::INTERNAL_SERVER_ERROR,
-                    "An internal server error has occurred".into(),
-                )
-            }
+            Self::PasswordHash(_) => (
+                StatusCode::INTERNAL_SERVER_ERROR,
+                "An internal server error occurred.".into(),
+            ),
             _ => (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                "An internal server error has occurred".into(),
+                "An internal server error occurred.".into(),
             ),
+        }
+    }
+
+    #[must_use]
+    pub const fn code(&self) -> &'static str {
+        match self {
+            Self::EmailTaken => "email_taken",
+            Self::EntityAlreadyExists => "entity_already_exists",
+            Self::EntityNotFound => "entity_not_found",
+            Self::FileNotFound => "file_not_found",
+            Self::InvalidClaimsKey => "invalid_claims",
+            Self::InvalidCredentials => "invalid_credentials",
+            Self::UnsupportedFileType => "unsupported_file_type",
+            Self::IO(_)
+            | Self::PasswordHash(_)
+            | Self::SerdeJson(_)
+            | Self::SerdeSaphyr(_)
+            | Self::SqlxError(_) => "internal_error",
         }
     }
 
@@ -83,8 +93,6 @@ impl ModelError {
     pub fn response(&self) -> Response {
         let (status, message) = self.response_body();
 
-        let body = Json(serde_json::json!({ "error": message }));
-
-        (status, body).into_response()
+        ErrorResponse::new(message, self.code()).into_response(status)
     }
 }
