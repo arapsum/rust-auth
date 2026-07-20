@@ -4,13 +4,9 @@ use validator::Validate;
 
 use crate::{Error, Result};
 
-pub use self::{
-    auth::{LoginUser, RegisterUser},
-    error::{ValidationError, ValidationResult},
-};
+pub use self::auth::{LoginUser, RegisterUser};
 
 pub mod auth;
-pub mod error;
 
 pub struct Validator<T>(pub T)
 where
