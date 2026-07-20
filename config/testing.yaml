@@ -4,7 +4,7 @@ server:
   port: 7151
 
 database:
-  uri: {{ get_env(name = "TEST_DATABASE_URL", default = "postgresql://username:password@localhost:5433/test_database") }}
+  uri: {{ get_env(name = "TEST_DATABASE_URL", default = "postgresql://username:password@localhost:5433/auth_test") }}
   max_connections: {{ get_env(name = "DATABASE_MAX_CONNECTIONS", default = "1") }}
   min_connections: {{ get_env(name = "DATABASE_MIN_CONNECTIONS", default = "1") }}
   connection_timeout: {{ get_env(name = "DATABASE_CONNECTION_TIMEOUT", default = "5") }}

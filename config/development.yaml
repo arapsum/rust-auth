@@ -4,7 +4,7 @@ server:
   port: {{ get_env(name = "SERVER_PORT", default = "7150") }}
 
 database:
-  uri: {{ get_env(name = "DATABASE_URL", default = "postgresql://username:password@localhost:5432/database") }}
+  uri: {{ get_env(name = "DATABASE_URL", default = "postgresql://username:password@localhost:5432/auth") }}
   max_connections: {{ get_env(name = "DATABASE_MAX_CONNECTIONS", default = "10") }}
   min_connections: {{ get_env(name = "DATABASE_MIN_CONNECTIONS", default = "0") }}
   connection_timeout: {{ get_env(name = "DATABASE_CONNECTION_TIMEOUT", default = "5") }}
