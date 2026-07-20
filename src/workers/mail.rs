@@ -7,16 +7,38 @@ use apalis_redis::{Config, ConnectionManager, RedisStorage};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use crate::{AppContext, config::RedisConfig, mailer::AuthMailer, repository::UserModel};
+use crate::{
+    AppContext, config::RedisConfig, mailer::AuthMailer, repository::UserModel,
+    workers::WorkerModule,
+};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct MailJob {
     pub user_id: Uuid,
 }
 
+#[derive(Debug, Clone)]
 pub struct MailQueue {
     pub welcome: RedisStorage<MailJob>,
     pub forgot: RedisStorage<MailJob>,
+}
+
+impl WorkerModule for MailQueue {
+    fn register(&self, monitor: Monitor, ctx: Arc<AppContext>) -> Monitor {
+        monitor
+            .register(
+                WorkerBuilder::new("mail-welcome")
+                    .data(ctx.clone())
+                    .backend(self.welcome.clone())
+                    .build_fn(handle_welcome),
+            )
+            .register(
+                WorkerBuilder::new("mailer-forgot")
+                    .data(ctx)
+                    .backend(self.forgot.clone())
+                    .build_fn(handle_forgot_password),
+            )
+    }
 }
 
 impl MailQueue {
