@@ -279,8 +279,27 @@ impl Seedable for UserModel {
         for user in data {
             sqlx::query(
                 r"
-                INSERT INTO users (id, email, username, password_hash, image, verified_at, verification_token, created_at, updated_at)
+                INSERT INTO users (
+                    id,
+                    email,
+                    username,
+                    password_hash,
+                    image,
+                    verified_at,
+                    verification_token,
+                    created_at,
+                    updated_at
+                )
                 VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+                ON CONFLICT (id) DO UPDATE SET
+                    email = EXCLUDED.email,
+                    username = EXCLUDED.username,
+                    password_hash = EXCLUDED.password_hash,
+                    image = EXCLUDED.image,
+                    verified_at = EXCLUDED.verified_at,
+                    verification_token= EXCLUDED.verification_token,
+                    created_at = EXCLUDED.created_at,
+                    updated_at = EXCLUDED.updated_at
             ",
             )
             .bind(user.id)
