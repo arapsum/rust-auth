@@ -302,6 +302,20 @@ async fn reports_request_rejections_consistently() {
             r#"{"error":"Expected a JSON request body","code":"invalid_content_type"}"#
         );
 
+        let missing_confirm_password = server
+            .post("/auth/sign-up")
+            .json(&serde_json::json!({
+                "email": "test:example.com",
+                "username": "user one",
+                "password": "Password"
+            }))
+            .await;
+        assert_eq!(missing_confirm_password.status_code(), 422);
+        assert_eq!(
+            missing_confirm_password.text(),
+            r#"{"error":"Request JSON does not match the expected schema","code":"invalid_json","field":"confirmPassword"}"#
+        );
+
         let invalid_path = server.get("/auth/verify/%FF").await;
         assert_eq!(invalid_path.status_code(), 400);
         assert_eq!(

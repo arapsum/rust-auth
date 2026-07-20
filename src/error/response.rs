@@ -1,3 +1,5 @@
+use std::error::Error as StdError;
+
 use axum::{
     Json,
     extract::rejection::JsonRejection,
@@ -101,6 +103,7 @@ impl Error {
     fn field(&self) -> Option<String> {
         match self {
             Self::PathRejection(rejection) => path_parameter_name(&rejection.body_text()),
+            Self::JsonRejection(rejection) => json_field_name(rejection),
             _ => None,
         }
     }
@@ -173,6 +176,38 @@ const fn json_rejection_code(rejection: &JsonRejection) -> &'static str {
         JsonRejection::BytesRejection(_) => "invalid_request_body",
         _ => "invalid_json",
     }
+}
+
+fn json_field_name(rejection: &JsonRejection) -> Option<String> {
+    let JsonRejection::JsonDataError(error) = rejection else {
+        return None;
+    };
+
+    let error = find_source::<serde_path_to_error::Error<serde_json::Error>>(error)?;
+    let field = error.path().to_string();
+
+    if !field.is_empty() && field != "." {
+        return Some(field);
+    }
+
+    missing_json_field_name(error.inner())
+}
+
+fn find_source<'a, T>(error: &'a (dyn StdError + 'static)) -> Option<&'a T>
+where
+    T: StdError + 'static,
+{
+    error
+        .downcast_ref::<T>()
+        .or_else(|| error.source().and_then(find_source::<T>))
+}
+
+fn missing_json_field_name(error: &serde_json::Error) -> Option<String> {
+    let message = error.to_string();
+    let (_, remainder) = message.split_once("missing field `")?;
+    let (field, _) = remainder.split_once('`')?;
+
+    (!field.is_empty()).then(|| field.to_string())
 }
 
 fn path_parameter_name(message: &str) -> Option<String> {
