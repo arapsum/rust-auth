@@ -2,6 +2,8 @@ use std::{borrow::Cow, collections::BTreeMap};
 
 use validator::Validate;
 
+use crate::{Error, Result};
+
 pub use self::{
     auth::{LoginUser, RegisterUser},
     error::{ValidationError, ValidationResult},
@@ -29,7 +31,7 @@ where
     /// This function will return an error if .
     ///  Specified validation constraint failed
     ///  Regex does not get instantiated
-    pub fn validate(&self) -> ValidationResult<&T> {
+    pub fn validate(&self) -> Result<&T> {
         match self.0.validate() {
             Ok(()) => Ok(&self.0),
             Err(val_errors) => {
@@ -48,9 +50,7 @@ where
                     },
                 );
 
-                Err(ValidationError::FieldError(
-                    serde_json::json!(errors).to_string(),
-                ))
+                Err(Error::ValidationError(serde_json::json!(errors).to_string()).into())
             }
         }
     }

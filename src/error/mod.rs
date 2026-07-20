@@ -2,7 +2,7 @@ use std::fmt::{self, Display};
 
 use jsonwebtoken::errors::{Error as JwtError, ErrorKind as JwtErrorKind};
 
-use crate::{mailer::MailerError, repository::ModelError, validator::ValidationError};
+use crate::{mailer::MailerError, repository::ModelError};
 
 pub mod response;
 
@@ -19,6 +19,8 @@ pub enum Error {
     #[error(transparent)]
     IO(#[from] tokio::io::Error),
     #[error(transparent)]
+    JsonRejection(#[from] axum::extract::rejection::JsonRejection),
+    #[error(transparent)]
     JwtError(JwtError),
     #[error(transparent)]
     Mailer(#[from] MailerError),
@@ -26,10 +28,12 @@ pub enum Error {
     MissingCredentials,
     #[error(transparent)]
     Model(#[from] ModelError),
+    #[error(transparent)]
+    PathRejection(#[from] axum::extract::rejection::PathRejection),
     #[error("Session expired")]
     SessionExpired,
-    #[error(transparent)]
-    Validation(#[from] ValidationError),
+    #[error("Validation error: {0}")]
+    ValidationError(String),
 }
 
 #[derive(Debug)]
