@@ -2,7 +2,6 @@
 use std::net::SocketAddr;
 use std::{io::IsTerminal, sync::Arc};
 
-use apalis::prelude::{Monitor, WorkerBuilder, WorkerFactoryFn};
 use axum::Router;
 use clap::Parser;
 use color_eyre::config::{HookBuilder, Theme};
@@ -11,13 +10,13 @@ use sqlx::PgPool;
 use tokio::net::TcpListener;
 use tower_http::trace::TraceLayer;
 
-use crate::repository::UserModel;
-use crate::workers::{self, MailQueue};
 use crate::{
     AppContext, Result,
     config::{Config, Environment},
     controllers,
     middlewares::trace,
+    repository::UserModel,
+    workers::{MailQueue, WorkerRegistry},
 };
 
 /// Auth app configuration
@@ -73,34 +72,13 @@ impl App {
         let config = self.config()?;
         let ctx = self.init(&config).await?;
 
-        let queue = MailQueue::init(config.redis()).await?;
+        let mail_queue = MailQueue::init(config.redis()).await?;
 
-        let welcome_backend = queue.welcome.clone();
-        let forgot_backend = queue.forgot.clone();
+        WorkerRegistry::new()
+            .append(mail_queue.clone())
+            .spawn(Arc::clone(&ctx));
 
-        ctx.set_queue(queue);
-
-        let ctx_worker = Arc::clone(&ctx);
-
-        tokio::spawn(async move {
-            tracing::info!("Initialising workers");
-            Monitor::new()
-                .register(
-                    WorkerBuilder::new("mail-welcome")
-                        .data(ctx_worker.clone())
-                        .backend(welcome_backend)
-                        .build_fn(workers::handle_welcome),
-                )
-                .register(
-                    WorkerBuilder::new("mailer-forgot")
-                        .data(ctx_worker)
-                        .backend(forgot_backend)
-                        .build_fn(workers::handle_forgot_password),
-                )
-                .run()
-                .await
-                .unwrap_or_else(|e| tracing::error!(error = ?e, "Queue monitor crashed!" ));
-        });
+        ctx.set_queue(mail_queue);
 
         let listener = TcpListener::bind(config.server().address()).await?;
 
