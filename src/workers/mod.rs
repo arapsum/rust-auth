@@ -1,8 +1,9 @@
 mod mail;
 
-use std::sync::Arc;
+use std::{io, sync::Arc, time::Duration};
 
 use apalis::prelude::Monitor;
+use tokio::{sync::oneshot, task::JoinHandle};
 
 use crate::AppContext;
 
@@ -26,6 +27,32 @@ pub struct WorkerRegistry {
     modules: Vec<Box<dyn WorkerModule>>,
 }
 
+pub struct WorkerHandle {
+    shutdown: oneshot::Sender<()>,
+    task: JoinHandle<io::Result<()>>,
+}
+
+impl WorkerHandle {
+    /// Signal all workers to stop and wait for their monitor task to finish.
+    ///
+    /// # Errors
+    ///
+    /// Returns an error when the monitor fails to shut down or its Tokio task
+    /// cannot be joined.
+    pub async fn shutdown(self) -> io::Result<()> {
+        tracing::info!("Stopping background workers");
+
+        if self.shutdown.send(()).is_err() {
+            tracing::debug!("Background workers had already stopped");
+        }
+
+        self.task.await.map_err(io::Error::other)??;
+        tracing::info!("Background workers stopped");
+
+        Ok(())
+    }
+}
+
 impl WorkerRegistry {
     #[must_use]
     pub fn new() -> Self {
@@ -39,8 +66,12 @@ impl WorkerRegistry {
     }
 
     /// Spawn a task that runs every registered module under one apalis `Monitor`.
-    pub fn spawn(self, ctx: Arc<AppContext>) {
-        tokio::spawn(async move {
+    #[must_use]
+    pub fn spawn(self, ctx: Arc<AppContext>) -> WorkerHandle {
+        const SHUTDOWN_TIMEOUT: Duration = Duration::from_secs(30);
+
+        let (shutdown, shutdown_signal) = oneshot::channel();
+        let task = tokio::spawn(async move {
             tracing::info!("Initialising workers");
 
             let monitor = self
@@ -48,11 +79,17 @@ impl WorkerRegistry {
                 .into_iter()
                 .fold(Monitor::new(), |monitor, module| {
                     module.register(monitor, ctx.clone())
-                });
+                })
+                .with_terminator(tokio::time::sleep(SHUTDOWN_TIMEOUT));
+
             monitor
-                .run()
+                .run_with_signal(async move {
+                    let _ = shutdown_signal.await;
+                    Ok(())
+                })
                 .await
-                .unwrap_or_else(|e| tracing::error!(error = ?e, "Queue monitor crashed"));
         });
+
+        WorkerHandle { shutdown, task }
     }
 }
