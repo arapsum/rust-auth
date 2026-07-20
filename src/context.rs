@@ -53,6 +53,12 @@ impl AppContext {
         let _ = self.queue.set(queue);
     }
 
+    pub async fn shutdown(&self) {
+        tracing::info!("Closing database pool");
+        self.db.close().await;
+        tracing::info!("Database pool closed");
+    }
+
     pub async fn init(&self) -> Result<(), crate::Error> {
         self.config().logger().setup()?;
         self.config().database().init().await?;

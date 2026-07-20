@@ -1,4 +1,5 @@
 #![allow(clippy::missing_errors_doc)]
+use std::future;
 use std::net::SocketAddr;
 use std::{io::IsTerminal, sync::Arc};
 
@@ -8,6 +9,7 @@ use color_eyre::config::{HookBuilder, Theme};
 use dotenvy::dotenv;
 use sqlx::PgPool;
 use tokio::net::TcpListener;
+use tokio::signal;
 use tower_http::trace::TraceLayer;
 
 use crate::{
@@ -16,7 +18,7 @@ use crate::{
     controllers,
     middlewares::trace,
     repository::UserModel,
-    workers::{MailQueue, WorkerRegistry},
+    workers::{MailQueue, WorkerHandle, WorkerRegistry},
 };
 
 /// Auth app configuration
@@ -34,11 +36,23 @@ pub struct App {
 pub struct AppResult {
     pub listener: TcpListener,
     pub router: Router,
+    pub context: Arc<AppContext>,
+    pub workers: WorkerHandle,
 }
 
 impl AppResult {
-    pub const fn new(listener: TcpListener, router: Router) -> Self {
-        Self { listener, router }
+    pub const fn new(
+        listener: TcpListener,
+        router: Router,
+        context: Arc<AppContext>,
+        workers: WorkerHandle,
+    ) -> Self {
+        Self {
+            listener,
+            router,
+            context,
+            workers,
+        }
     }
 }
 
@@ -74,7 +88,7 @@ impl App {
 
         let mail_queue = MailQueue::init(config.redis()).await?;
 
-        WorkerRegistry::new()
+        let workers = WorkerRegistry::new()
             .append(mail_queue.clone())
             .spawn(Arc::clone(&ctx));
 
@@ -93,7 +107,7 @@ impl App {
                     .on_failure(trace::on_failure),
             );
 
-        Ok(AppResult::new(listener, router))
+        Ok(AppResult::new(listener, router, ctx, workers))
     }
 
     pub async fn run(&self) -> Result<()> {
@@ -108,18 +122,31 @@ impl App {
         let this = Self::parse();
 
         let config = this.config()?;
-        let app_result = this.create().await?;
+        let AppResult {
+            listener,
+            router,
+            context,
+            workers,
+        } = this.create().await?;
 
         tracing::info!("Server running at {}", config.server().url());
 
-        axum::serve(
-            app_result.listener,
-            app_result
-                .router
-                .into_make_service_with_connect_info::<SocketAddr>(),
+        let server_result = axum::serve(
+            listener,
+            router.into_make_service_with_connect_info::<SocketAddr>(),
         )
-        .await
-        .map_err(Into::into)
+        .with_graceful_shutdown(shutdown_signal())
+        .await;
+
+        tracing::info!("HTTP server stopped");
+
+        let worker_result = workers.shutdown().await;
+        context.shutdown().await;
+
+        server_result?;
+        worker_result?;
+
+        Ok(())
     }
 
     pub async fn seed(db: &PgPool) -> Result<()> {
@@ -139,4 +166,38 @@ impl Default for App {
 enum Commands {
     /// Seeds the database with initial data
     Seed,
+}
+
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        if let Err(err) = signal::ctrl_c().await {
+            tracing::error!(error = ?err, "Failed to install Ctrl+C shutdown handler");
+            future::pending::<()>().await;
+        }
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        match signal::unix::signal(signal::unix::SignalKind::terminate()) {
+            Ok(mut stream) => {
+                stream.recv().await;
+            }
+            Err(err) => {
+                tracing::error!(error = ?err, "Failed to install SIGTERM shutdown handler");
+                future::pending::<()>().await;
+            }
+        }
+    };
+
+    #[cfg(not(unix))]
+    let terminate = future::pending::<()>();
+
+    tokio::select! {
+        () = ctrl_c => {
+            tracing::info!("Received Ctrl+C shutdown signal");
+        }
+        () = terminate => {
+            tracing::info!("Received terminate shutdown signal");
+        }
+    }
 }
